@@ -24,7 +24,7 @@ async function showExamples(data) {
     canvas.style = 'margin: 4px;';
     await tf.browser.toPixels(imageTensor, canvas);
     surface.drawArea.appendChild(canvas);
-
+    //console.log(canvas);
     imageTensor.dispose();
   }
 }
@@ -117,8 +117,8 @@ function getModel() {
     const fitCallbacks = tfvis.show.fitCallbacks(container, metrics);
     
     const BATCH_SIZE = 512;
-    const TRAIN_DATA_SIZE = 5500;
-    const TEST_DATA_SIZE = 1000;
+    const TRAIN_DATA_SIZE = 5500; // numtraindata / numclasses
+    const TEST_DATA_SIZE = 1000;  // numtestdata / numclasses
   
     const [trainXs, trainYs] = tf.tidy(() => {
       const d = data.nextTrainBatch(TRAIN_DATA_SIZE);

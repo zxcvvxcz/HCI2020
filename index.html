@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang = "en">
     <head>
         <meta charset = "utf-8"/>
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -14,12 +14,50 @@
         <script src="data.js" type="module"></script>
 
         <!-- Import the main script file -->
-        <script src="script.js" type="module"></script>
-        <script src="https://d3js.org/d3.v5.min.js"></script>
-        <script src="d3_main.js"></script>
+        <!-- <script src="script.js" type="module"></script> -->
+        
+        <!-- Import font awesome 5 for icons -->
+        <link rel="stylesheet" 
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.8.2/css/all.min.css"/>
+        <link rel="stylesheet" href="./main.css" />
     </head>
     
     <body>
+        <!-- <svg class = "btn_learn" width = "1000" height = "1000"></svg> -->
+        <div class = "btnTop">
+            <button class = 'btnLearning' id ='play'><i class="fas fa-play-circle fa-3x"></i></button>
+            <button class = 'btnLearning' id ='stop'><i class="fas fa-stop-circle fa-3x"></i></button>
+            <button class = 'btnSaveLoad' id ='savePy'>Save .py</button>
+            <button class = 'btnSaveLoad' id ='Example'>Example</button>
+        </div>
+        <div class = "modelSpace">
+            <svg class = "data"></svg>
+            <form class = 'dataForm'>
+                <label for='batchSize'> batch size<br/>:</label>
+                <select id = 'batchSize'>
+                    <option value="128">128</option>
+                    <option value="256">256</option>
+                    <option value="512">512</option>
+                    <option value="1024">1024</option>
+                </select><br/>
+                    <label for='trainData'> Training data<br/>:</label>
+                    <select id="trainData">
+                        <option value="60000">60000</option>
+                        <option value="55000">55000</option>
+                        <option value="45000">45000</option>
+                    </select>
+                <br>
+                <!-- <label for='trainData'> Training data<br/>:</label> -->
+            </form>
+            <svg class = 'model'></svg>
+            <svg class = 'result'></svg>
+        </div>
+        
+        <script src="https://d3js.org/d3.v5.min.js"></script>
+        <script src="d3_main.js" type = 'module'></script>
         
     </body>
+    <!-- Import newest d3.js-->
+    
+    
 </html>

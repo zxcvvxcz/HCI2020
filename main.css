@@ -1,0 +1,30 @@
+.btnSaveLoad{
+    border: 1px solid skyblue; 
+    background-color: rgb(255, 255, 255); 
+    padding: 5px;
+    float: right;
+    font-size : 30px;
+    margin : 20px 10px;
+}
+
+.btnLearning {
+    border: 10px solid white; 
+    background-color: rgba(0,0,0,0); 
+    padding: 5px;
+    cursor: pointer;
+    font-size : 18px;
+}
+
+.btnLearning:hover {
+    color: rgb(145, 147, 153);
+}
+
+.modelSpace{
+    height : 400px;
+    border : 1px solid skyblue;
+    padding: 10px;
+}
+
+.data{
+    height : 100px;
+}
