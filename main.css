@@ -91,7 +91,7 @@
     display: block;
 }
 
-.addGroup, .addLayerGroup{
+.addGroup, .addLayerGroup, .addLayerDiv, .layerVis{
     display:inline-block;
 }
 

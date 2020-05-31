@@ -68,6 +68,20 @@ const filterSizes = [3, 5];
 const strides = [1, 2];
 const paddings = [0, 1];
 const learningRates = [0.001, 0.002, 0.003, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.1];
+
+let numLayer = 0;
+let numAddBtn = 1;
+let layers = [];
+let addBtns = [0];
+let inputSizes = [28];
+let outputSizes = [];
+
+let PytorchInit = [];
+let PytorchForward = [];
+let PytorchCodes = [PytorchInit, PytorchForward];
+let tensorflowCodes = [];
+let kerasCodes = [];
+let modelCodes = [PytorchCodes, tensorflowCodes, kerasCodes];
 // const setLearningRate = d3.select('.learningRate').on('change')
 const setLayer = (layer, i, inp, outp, spliceNum) => {
     if (layer === layerNames[0]){
@@ -102,63 +116,197 @@ const setLayer = (layer, i, inp, outp, spliceNum) => {
         })
     }
 }
+const closeFunc = function(){
+    d3.select(this.parentNode.parentNode).remove()
+}
 const makeLayer = function (layerDiv, i, value) {
+    layerDiv.attr('class', 'layerVis')
+    
+    console.log('i:' + i + ' value: ' + value)
     layerDiv.append('button')
         .html(closeBtnHtml)
         .attr('class', 'closeBtn')
+        .on('click', closeFunc)
     const layerTitleBtn = layerDiv.append('button')
-            .attr('class', 'layerTitleBtn')
-            .text(value)
-    layerTitleBtn.on('click', )
+        .attr('class', 'layerTitleBtn')
+        .text(value)
+        .style('float', 'left')
+    layerTitleBtn.on('click', function(){
+        //closeFunc
+        d3.select(this.parentNode.parentNode).remove()
+        //addLayerFunc
+        d3.select(this).addLayerFunc();
+    })
     if(value == layerNames[0]){
+        const layerShow = layerDiv.append('svg')
+            .attr('width', 90)
+            .attr('height', 90)
+        
+        const labelInput = layerDiv.append('label')
+            .text('Input: ' + inputSizes[i])
+            .attr('for', '#convInput' + i)
+        const labelFilter = layerDiv.append('label')
+            .text('Filter: ')
+            .attr('for', '#convFilter' + i)
+            .style('float', 'left')
+        const dropdownFilter = layerDiv.append('select')
+            .attr('id', 'convFilter' + i)
+        d3.select('#convFilter' + i).selectAll('option').data(filterSizes)
+            .enter().append('option')
+            .attr('value', d => d)
+            .html(d =>{ return d + '*' + d})
+        const labelStride = layerDiv.append('label')
+            .text('Stride: ')
+            .attr('for', '#convStride' + i)
+            .style('float', 'left')
+        const dropdownStride = layerDiv.append('select')
+            .attr('id', 'convStride' + i)
+        d3.select('#convStride' + i).selectAll('option').data(strides).enter().append('option')
+            .attr('value', d => d)
+            .html(d => d)
+
+        const labelPadding = layerDiv.append('label')
+            .text('Padding: ')
+            .attr('for', '#convPadding' + i)
+            .style('float', 'left')
+        const dropdownPadding = layerDiv.append('select')
+            .attr('id', 'convPadding' + i)
+        d3.select('#convPadding' + i).selectAll('option').data(paddings).enter().append('option')
+            .attr('value', d => d)
+            .html(d => d)
+        const labelChanIn = layerDiv.append('label')
+            .text('Channel in: 1')
+            .style('float', 'left')
+        const labelChanOut = layerDiv.append('label')
+            .text('Channel out: 1')
+            .style('float', 'left')
+        const labelOutput = layerDiv.append('label')
+            .text('Output: ' + outputSizes[i])
+            .attr('for', '#convOutput' + i)
+            .style('float', 'left')
     } else if (value == layerNames[1]){
-
+        const layerShow = layerDiv.append('img')
+            .attr('width', 90)
+            .attr('height', 90)
+            .attr('src', '/images/ReLU.png')
+        
+        const labelActivation = layerDiv.append('label')
+            .text('Activation: ')
+            .attr('for', '#activationLayer' + i)
+            .style('float', 'left')
+        const dropdownActivation = layerDiv.append('select')
+            .attr('id', 'activationLayer' + i)
+        d3.select('#activationLayer' + i).selectAll('option').data(activationLayers).enter().append('option')
+            .attr('value', d => {console.log(d); return d})
+            .html(d => d)
+        dropdownActivation.on('change', function(){
+            layerShow.attr('src', '/images/'.concat(d3.select(this).property('value'),'.png'))
+        })
     } else if (value == layerNames[2]){
-
+        const layerShow = layerDiv.append('svg')
+            .attr('width', 90)
+            .attr('height', 90)
+        
+        const labelInput = layerDiv.append('label')
+            .text('Input: ' + inputSizes[i])
+            .attr('for', '#convInput' + i)
+        const labelFilter = layerDiv.append('label')
+            .text('Filter: ')
+            .attr('for', '#convFilter' + i)
+            .style('float', 'left')
+        const dropdownFilter = layerDiv.append('select')
+            .attr('id', 'convFilter' + i)
+        d3.select('#convFilter' + i).selectAll('option').data(filterSizes)
+            .enter().append('option')
+            .attr('value', d => d)
+            .html(d =>{ return d + '*' + d})
+        const labelStride = layerDiv.append('label')
+            .text('Stride: ')
+            .attr('for', '#convStride' + i)
+            .style('float', 'left')
+        const dropdownStride = layerDiv.append('select')
+            .attr('id', 'convStride' + i)
+        d3.select('#convStride' + i).selectAll('option').data(strides).enter().append('option')
+            .attr('value', d => d)
+            .html(d => d)
+        const labelPadding = layerDiv.append('label')
+            .text('Padding: ')
+            .attr('for', '#convPadding' + i)
+            .style('float', 'left')
+        const dropdownPadding = layerDiv.append('select')
+            .attr('id', 'convPadding' + i)
+        d3.select('#convPadding' + i).selectAll('option').data(paddings).enter().append('option')
+            .attr('value', d => d)
+            .html(d => d)
+        const labelOutput = layerDiv.append('label')
+            .text('Output: ' + outputSizes[i])
+            .attr('for', '#convOutput' + i)
+            .style('float', 'left')
     } else if (value == layerNames[3]){
-
+        const layerShow = layerDiv.append('img')
+            .attr('width', 90)
+            .attr('height', 90)
+            .attr('src', '/images/linear.png')
+        
+        const labelInput = layerDiv.append('label')
+            .text('Input: ' + inputSizes[i])
+            .attr('for', '#linearInput' + i)
+        const labelOutput = layerDiv.append('label')
+            .text('Output: 10')
+            .attr('for', '#linearOutput' + i)
+            .style('float', 'left')
     }
+    
 }
-let numLayer = 0;
-let numAddBtn = 1;
-let layers = [];
-let addBtns = [0];
-let inputSizes = [28];
-let outputSizes = [];
 
 const addBtnHtml = "<i class = 'fas fa-plus-circle fa'></i>"
 const closeBtnHtml = "<i class = 'fas fa-window-close fa'></i>"
 const addLayerFunc = function () {
-    const newLayers = d3.select(this.parentNode);
-    const newButtons = newLayers.append('div').attr('class', 'addLayerGroup')
+    const newLayers = d3.select(this.parentNode.parentNode);
+    const newDiv = newLayers.append('div')
+        .attr('class', 'addLayerDiv')
+        .attr('id', 'LayerDiv' + numLayer)
+    const newButtons = newDiv.append('div')
+        .attr('class', 'addLayerGroup')
+        .attr('id', 'Layer' + numLayer)
     var i;
     const closeBtn = newButtons.append('button')
         .attr('class', 'closeBtn')
         .html(closeBtnHtml)
+        .on('click', closeFunc)
     for(i = 0; i < 4; i++){
         var newButton = newButtons.append('button')
             .attr('class', 'addLayerBtn')
             .attr('value', layerNames[i])
-            .attr('id', 'Layer' + numLayer)
             .text(layerNames[i])
-        //
-        let selected = d3.select(this).property('value')
-        layers.splice(addBtns.indexOf(selected), 0, d3.select(this).property('id'))
         newButton.on('mouseover', function(){ d3.select(this).style('background-color', 'green')})
         newButton.on('mouseleave', function(){ d3.select(this).style('background-color', '#4CAF50')})
         newButton.on('click', function(){
             i = layers.indexOf(d3.select(this).property('id'));
             var value = d3.select(this).property('value');
             setLayer(value, i, inputSizes[i], outputSizes[i], 0)
-            // makeLayer
-            const newLayer = newButton.append('div')
-                .attr('width', '100px')
-                .attr('height', '400px')
+            // makeLayer -> deletion here
+            d3.select(this.parentNode.parentNode).remove()
+            const newLayer = newLayers.append('div')
+                .style('width', '100px')
+                .style('height', '400px')
                 .style('display', 'inline-block')
-            
+            const newNewLayer = newLayer.append('div')
+            makeLayer(newNewLayer, i, value)
+            newLayer.append('button')
+            .html(addBtnHtml)
+            .attr('class', 'addBtn')
+            .attr('id', 'addBtn'+numAddBtn)
+            .attr('value', numAddBtn)
+        var addLayerAgain = d3.selectAll('.addBtn').on('click', addLayerFunc)
         })
+        //
     }
-    newLayers.append('button')
+    let selected = d3.select(this).property('value')
+    console.log('selected: ' +selected)
+    layers.splice(addBtns.indexOf(selected), 0, newButtons.property('id'))
+    console.log(layers)
+    newDiv.append('button')
         .html(addBtnHtml)
         .attr('class', 'addBtn')
         .attr('id', 'addBtn'+numAddBtn)
