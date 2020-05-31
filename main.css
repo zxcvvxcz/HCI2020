@@ -7,7 +7,7 @@
     margin : 20px 10px;
 }
 
-.btnLearning {
+.btnLearning{
     border: 10px solid white; 
     background-color: rgba(0,0,0,0); 
     padding: 5px;
@@ -41,10 +41,62 @@
 }
 
 .dataSpace, .visSpace, .resultSpace {
-    display:inline-block;
+    float: left;
+    height : 400px;
+}
+
+.dataSpace{
+    width: 12%;
+}
+
+.visSpace {
+    width: 70%;
+    text-align: center;
+    
+}
+
+.addBtn{
+    border: 10px solid white; 
+    background-color: rgba(0,0,0,0); 
+    padding: 2px;
+    cursor: pointer;
+    font-size : 18px;
+}
+
+.closeBtn{
+    border: 10px solid white; 
+    background-color: rgba(0,0,0,0); 
+    color : red;
+    padding: 2px;
+    cursor: pointer;
+    font-size : 18px;
 }
 .data{
     height : 100px;
+}
+
+.addBtn, .addLayerBtn {
+    padding: auto;
+}
+.addLayerBtn {
+    background-color: #4CAF50; /* Green */
+    border: 1px solid green;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    font-size: 16px;
+    cursor: pointer;
+    width: 150px;
+    display: block;
+}
+
+.addGroup, .addLayerGroup{
+    display:inline-block;
+}
+
+.addLayerBtn:not(:last-child){
+    border-bottom : none;
 }
 
 .MLstep{

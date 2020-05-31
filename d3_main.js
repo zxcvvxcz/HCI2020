@@ -59,10 +59,10 @@ const trainSizeDD = d3.select('#trainData')
     .on('change', function(d){
         let selectedOption = d3.select(this).property('value')
         testSizeDD
-            .text('Test data:    ' + (65000 - selectedOption) + '    ')
+            .text('Test data:    ' + (65000 - selectedOption))
 })
-
 let modelLayers = [];
+let layerNames = ['Conv', 'Acti','Pool', 'Linear'];
 const activationLayers = ['ReLU', 'tanh', 'sigmoid'];
 const filterSizes = [3, 5];
 const strides = [1, 2];
@@ -70,9 +70,9 @@ const paddings = [0, 1];
 const learningRates = [0.001, 0.002, 0.003, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.1];
 // const setLearningRate = d3.select('.learningRate').on('change')
 const setLayer = (layer, i, inp, outp, spliceNum) => {
-    if (layer === 'conv'){
+    if (layer === layerNames[0]){
         modelLayers.splice(i, spliceNum, {
-            layer : 'conv',
+            layer : layerNames[0],
             input : inp,
             filterSize : filterSizes[0],
             stride : strides[0],
@@ -81,27 +81,93 @@ const setLayer = (layer, i, inp, outp, spliceNum) => {
             channelOut: 1,
             output : outp, 
         })
-    } else if (layer === 'activation'){
+    } else if (layer === layerNames[1]){
         modelLayers.splice(i, spliceNum, {
-            layer : 'activation',
+            layer : layerNames[1],
             method : activationLayers[0], //ReLU
         })
-    } else if (layer === 'pool'){
+    } else if (layer === layerNames[2]){
         modelLayers.splice(i, spliceNum, {
-            layer : 'pool',
+            layer : layerNames[2],
             filterSize : filterSizes[0],
             stride : strides[0],
             padding : paddings[0],
             output : outp,
         })
-    } else if (layer === 'linear'){
+    } else if (layer === layerNames[3]){
         modelLayers.splice(i, spliceNum, {
-            layer : 'linear',
+            layer : layerNames[3],
             input : inp,
             output : outp,
         })
     }
 }
+const makeLayer = function (layerDiv, i, value) {
+    layerDiv.append('button')
+        .html(closeBtnHtml)
+        .attr('class', 'closeBtn')
+    const layerTitleBtn = layerDiv.append('button')
+            .attr('class', 'layerTitleBtn')
+            .text(value)
+    layerTitleBtn.on('click', )
+    if(value == layerNames[0]){
+    } else if (value == layerNames[1]){
+
+    } else if (value == layerNames[2]){
+
+    } else if (value == layerNames[3]){
+
+    }
+}
+let numLayer = 0;
+let numAddBtn = 1;
+let layers = [];
+let addBtns = [0];
+let inputSizes = [28];
+let outputSizes = [];
+
+const addBtnHtml = "<i class = 'fas fa-plus-circle fa'></i>"
+const closeBtnHtml = "<i class = 'fas fa-window-close fa'></i>"
+const addLayerFunc = function () {
+    const newLayers = d3.select(this.parentNode);
+    const newButtons = newLayers.append('div').attr('class', 'addLayerGroup')
+    var i;
+    const closeBtn = newButtons.append('button')
+        .attr('class', 'closeBtn')
+        .html(closeBtnHtml)
+    for(i = 0; i < 4; i++){
+        var newButton = newButtons.append('button')
+            .attr('class', 'addLayerBtn')
+            .attr('value', layerNames[i])
+            .attr('id', 'Layer' + numLayer)
+            .text(layerNames[i])
+        //
+        let selected = d3.select(this).property('value')
+        layers.splice(addBtns.indexOf(selected), 0, d3.select(this).property('id'))
+        newButton.on('mouseover', function(){ d3.select(this).style('background-color', 'green')})
+        newButton.on('mouseleave', function(){ d3.select(this).style('background-color', '#4CAF50')})
+        newButton.on('click', function(){
+            i = layers.indexOf(d3.select(this).property('id'));
+            var value = d3.select(this).property('value');
+            setLayer(value, i, inputSizes[i], outputSizes[i], 0)
+            // makeLayer
+            const newLayer = newButton.append('div')
+                .attr('width', '100px')
+                .attr('height', '400px')
+                .style('display', 'inline-block')
+            
+        })
+    }
+    newLayers.append('button')
+        .html(addBtnHtml)
+        .attr('class', 'addBtn')
+        .attr('id', 'addBtn'+numAddBtn)
+        .attr('value', numAddBtn)
+    var addLayerAgain = d3.selectAll('.addBtn').on('click', addLayerFunc)
+    numLayer++;
+    numAddBtn++;
+}
+var addLayer = d3.selectAll('.addBtn').on('click', addLayerFunc)
 
 const updateLayer = () => {
 
