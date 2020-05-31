@@ -7,10 +7,10 @@ const [btnSvgWidth, btnSvgHeight] = [300, 100];
 const [iconWidth, iconHeight] = [50, 50];
 const playClick = function () {
     
-    if(this.innerHTML == '<i class="fas fa-play-circle fa-3x"></i>'){   //play
+    if(this.innerHTML === '<i class="fas fa-play-circle fa-3x"></i>'){   //play
         this.innerHTML = '<i class="fas fa-pause-circle fa-3x"></i>';
     }
-    else if(this.innerHTML == '<i class="fas fa-pause-circle fa-3x"></i>'){  //pause
+    else if(this.innerHTML === '<i class="fas fa-pause-circle fa-3x"></i>'){  //pause
         this.innerHTML = '<i class="fas fa-play-circle fa-3x"></i>';
     }
     else{   //stop
@@ -19,8 +19,6 @@ const playClick = function () {
 }
 const btnTopSvg = d3.selectAll('.btnTop')
 const btnLearnFunc = btnTopSvg.selectAll('.btnLearning').on('click', playClick);
-
-let modelArray = [];
 
 const dataSpace = d3.select('.modelSpace').select('.data')
 const modelSpace = d3.select('.modelSpace').select('.model')
@@ -47,20 +45,67 @@ const dataSizeText = dataSpace.append('text')
 //     .attr('y', 50)
 //     .attr('width', 28)
 //     .attr('height', 28)
-const testSizeDD = d3.select('.dataForm').append('svg').append('text')
+const testSizeDD = d3.select('.dataForm').append('svg')
+    .attr('width', 300)
+    .attr('height', 50)
+    .append('text')
     .attr('x', 0)
     .attr('y', 15)
     .attr('width', 30)
     .attr('height', 30)
-    .text('Test data\n:')
+    .text('Test data: 5000')
     .style('color', 'black')
 const trainSizeDD = d3.select('#trainData')
     .on('change', function(d){
         let selectedOption = d3.select(this).property('value')
         testSizeDD
-            .text('Test data:    ' + selectedOption + '    ')
-    })
+            .text('Test data:    ' + (65000 - selectedOption) + '    ')
+})
 
+let modelLayers = [];
+const activationLayers = ['ReLU', 'tanh', 'sigmoid'];
+const filterSizes = [3, 5];
+const strides = [1, 2];
+const paddings = [0, 1];
+const learningRates = [0.001, 0.002, 0.003, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.1];
+// const setLearningRate = d3.select('.learningRate').on('change')
+const setLayer = (layer, i, inp, outp, spliceNum) => {
+    if (layer === 'conv'){
+        modelLayers.splice(i, spliceNum, {
+            layer : 'conv',
+            input : inp,
+            filterSize : filterSizes[0],
+            stride : strides[0],
+            padding : paddings[0],
+            channelIn: 1,
+            channelOut: 1,
+            output : outp, 
+        })
+    } else if (layer === 'activation'){
+        modelLayers.splice(i, spliceNum, {
+            layer : 'activation',
+            method : activationLayers[0], //ReLU
+        })
+    } else if (layer === 'pool'){
+        modelLayers.splice(i, spliceNum, {
+            layer : 'pool',
+            filterSize : filterSizes[0],
+            stride : strides[0],
+            padding : paddings[0],
+            output : outp,
+        })
+    } else if (layer === 'linear'){
+        modelLayers.splice(i, spliceNum, {
+            layer : 'linear',
+            input : inp,
+            output : outp,
+        })
+    }
+}
+
+const updateLayer = () => {
+
+}
 async function showExamples(data) {
     // Create a container in the visor
     const surface = dataSvg
@@ -89,6 +134,3 @@ async function showExamples(data) {
     }
 }
 
-const dropdown_filter = ["3*3", "5*5"];
-const dropdown_padding = [0, 1];
-const dropdown_lr = [0.001, 0.002, 0.003, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.1]

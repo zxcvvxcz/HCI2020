@@ -19,12 +19,40 @@
     color: rgb(145, 147, 153);
 }
 
-.modelSpace{
+#epoch{
+    font-size: 30px;
+    font-weight: 600;
+}
+.dataForm{
+    display: inline-block;
+    height: 250px;
+    width: 300px;
+}
+.modelSpace, .codeSpace{
     height : 400px;
     border : 1px solid skyblue;
     padding: 10px;
+    margin: 20px 0px;
 }
 
+.modelSpace{
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.dataSpace, .visSpace, .resultSpace {
+    display:inline-block;
+}
 .data{
     height : 100px;
+}
+
+.MLstep{
+    float : right;
+    margin : 5px;
+}
+
+
+.codeSpace{
+    overflow-y: auto;
 }

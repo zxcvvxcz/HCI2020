@@ -27,32 +27,72 @@
         <div class = "btnTop">
             <button class = 'btnLearning' id ='play'><i class="fas fa-play-circle fa-3x"></i></button>
             <button class = 'btnLearning' id ='stop'><i class="fas fa-stop-circle fa-3x"></i></button>
+            <span id = 'epoch'>Epoch : 0</span>
             <button class = 'btnSaveLoad' id ='savePy'>Save .py</button>
             <button class = 'btnSaveLoad' id ='Example'>Example</button>
         </div>
         <div class = "modelSpace">
-            <svg class = "data"></svg>
-            <form class = 'dataForm'>
-                <label for='batchSize'> batch size<br/>:</label>
-                <select id = 'batchSize'>
-                    <option value="128">128</option>
-                    <option value="256">256</option>
-                    <option value="512">512</option>
-                    <option value="1024">1024</option>
-                </select><br/>
+            <div class = "dataSpace"><svg class = "data"></svg>
+                <br>
+                <form class = 'dataForm'>
+                    <br>
+                    <label for='batchSize'> batch size<br/>:</label>
+                    <select id = 'batchSize'>
+                        <option value="128">128</option>
+                        <option value="256">256</option>
+                        <option value="512">512</option>
+                        <option value="1024">1024</option>
+                    </select><br/>
+                    <br>
                     <label for='trainData'> Training data<br/>:</label>
                     <select id="trainData">
-                        <option value="60000">60000</option>
-                        <option value="55000">55000</option>
-                        <option value="45000">45000</option>
+                        <option value=60000>60000</option>
+                        <option value=55000>55000</option>
+                        <option value=45000>45000</option>
                     </select>
-                <br>
-                <!-- <label for='trainData'> Training data<br/>:</label> -->
-            </form>
+                    <br>
+                    <br>
+                    <!-- <label for='trainData'> Training data<br/>:</label> -->
+                </form>
+            </div>
+            <div class = 'visSpace'>
+                <button class = 'addBtn'><i class = 'fas fa-plus-circle fa-2x'></i></button>
+            </div>
+            <div class = 'resultSpace'></div>
             <svg class = 'model'></svg>
             <svg class = 'result'></svg>
         </div>
+        <div class = 'betweenSpaces'>
+            <label for ="learningRate" >Learning rate : </label>
+            <select id="learningRate">
+                <option value="0.001">0.001</option>
+                <option value="0.002">0.002</option>
+                <option value="0.003">0.003</option>
+                <option value="0.005">0.005</option>
+                <option value="0.01">0.01</option>
+                <option value="0.02">0.02</option>
+                <option value="0.03">0.03</option>
+                <option value="0.04">0.04</option>
+                <option value="0.05">0.05</option>
+                <option value="0.1">0.1</option>
+            </select>
+            <label for="momentum">momentum : </label>
+            <select name="" id="">
+                <option value="0.9">0.9</option>
+                <option value="0.8">0.8</option>
+            </select>
+            <i class="fas fa-arrows-alt-v fa-3x" style = 'font-size: 50px; text-align: center; display: block;'></i>
+            <button class = 'library' id = 'Pytorch'>Pytorch</button>
+            <button class = 'library' id = 'tensorflow'>tensorflow</button>
+            <button class = 'library' id = 'keras'>keras</button>
+            <button class = 'MLstep' id = 'resultCode'>Result</button>
+            <button class = 'MLstep' id = 'modelCode'>Model</button>
+            <button class = 'MLstep' id = 'preprocessCode'>Preprocess</button>
+        </div>
         
+        <div class = 'codeSpace'>
+
+        </div>
         <script src="https://d3js.org/d3.v5.min.js"></script>
         <script src="d3_main.js" type = 'module'></script>
         
