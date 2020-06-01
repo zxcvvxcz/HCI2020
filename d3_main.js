@@ -5,6 +5,52 @@ import {MnistData} from './data.js';
 function translate(x, y) {
     return `translate(${x}, ${y})`
 }
+
+function showSizes(svg, inp, outp, filt, str, padd){
+    console.log('input: ' + inp + 'output: ' + outp + 'filter:' + filt + 'stride: ' + str + 'padd: ' + padd)
+    const entireSquare = svg.append('rect')
+        .attr('x', 0)
+        .attr('y', 0)
+        .attr('width', 56)
+        .attr('height', 56)
+        .style('border', '1px solid black')
+        .style('fill', 'white')
+    const inputSquare = svg.append('rect')
+        .attr('x', 0)
+        .attr('y', 0)
+        // .attr('width', inp * 2)
+        // .attr('height', inp * 2)
+        .attr('width', 56)
+        .attr('height', 56)
+        .style('border', '1px solid black')
+        .style('fill', 'gray')
+        
+    const padSquare = svg.append('rect')
+    .attr('x', 0)
+    .attr('y', 0)
+    // .attr('width', outp * 2)
+    // .attr('height', outp * 2)
+    .attr('width', 20)
+    .attr('height', 20)
+    .style('border', '1px solid black')
+    .style('fill', 'blue')
+    const outputSquare = svg.append('rect')
+        .attr('x', padd)
+        .attr('y', padd)
+        .attr('width', (outp - 2 * padd) * 2)
+        .attr('height', (outp - 2 * padd) * 2)
+        .style('border', '1px solid black')
+        .style('fill', 'black')
+    
+    const filterSquare = svg.append('rect')
+        .attr('x', padd)
+        .attr('y', padd)
+        .attr('width', filt * 2)
+        .attr('height', filt * 2)
+        .style('border', '1px solid black')
+        .style('fill', 'red')
+    return;
+}
 const [btnSvgWidth, btnSvgHeight] = [300, 100];
 const [iconWidth, iconHeight] = [50, 50];
 const playClick = function () {
@@ -75,8 +121,8 @@ let numLayer = 0;
 let numAddBtn = 1;
 let layers = [];
 let addBtns = [0];
-let inputSizes = [28];
-let outputSizes = [];
+let inputSizes = [28] * 10;
+let outputSizes = [10] * 10;
 
 let currLib = 'Pytorch'
 let PytorchInit = [];
@@ -147,7 +193,6 @@ const makeLayer = function (layerDiv, i, value) {
         const layerShow = layerDiv.append('svg')
             .attr('width', 90)
             .attr('height', 90)
-        
         const labelInput = layerDiv.append('label')
             .text('Input: ' + inputSizes[i])
             .attr('for', '#convInput' + i)
@@ -190,6 +235,9 @@ const makeLayer = function (layerDiv, i, value) {
             .text('Output: ' + outputSizes[i])
             .attr('for', '#convOutput' + i)
             .style('float', 'left')
+        console.log('i : ' + i)
+        showSizes(layerShow, inputSizes[i], outputSizes[i], dropdownFilter.property('value'),
+            dropdownStride.property('value'), dropdownPadding.property('value'))
     } else if (value == layerNames[1]){
         const layerShow = layerDiv.append('img')
             .attr('width', 90)
@@ -248,6 +296,9 @@ const makeLayer = function (layerDiv, i, value) {
             .text('Output: ' + outputSizes[i])
             .attr('for', '#convOutput' + i)
             .style('float', 'left')
+        
+        showSizes(layerShow, inputSizes[i], outputSizes[i], dropdownFilter.property('value'),
+            dropdownStride.property('value'), dropdownPadding.property('value'))
     } else if (value == layerNames[3]){
         const layerShow = layerDiv.append('img')
             .attr('width', 90)
@@ -300,18 +351,10 @@ const addLayerFunc = function () {
         newButton.on('click', function(){
             i = layers.indexOf(d3.select(this).property('id'));
             var value = d3.select(this).property('value');
-            // setLayer(value, i, inputSizes[i], outputSizes[i], 0)
+            setLayer(value, i, inputSizes[i], outputSizes[i], 0)
             // makeLayer -> deletion here
             const siblingGPNode = this.parentNode.parentNode.nextElementSibling;
             d3.select(this.parentNode.parentNode).remove()
-            // let newDiv;
-            // if(this.parentNode.nextElementSibling === null){
-            //     newDiv = newLayers.append('div')
-            // }else{
-            //     newDiv = d3.select(this).select(function(){
-            //         return this.parentNode.parentNode.insertBefore(document.createElement("div"), this.parentNode.nextElementSibling);
-            //     })
-            // }
             let newLayer;
             console.log('sib: '+this.parentNode.nextElementSibling)
             console.log('grandparent: '+this.parentNode.parentNode)
@@ -330,11 +373,18 @@ const addLayerFunc = function () {
             makeLayer(newNewLayer, i, value)
             // makeLayer(newNewLayer, value)
             newLayer.append('button')
-            .html(addBtnHtml)
-            .attr('class', 'addBtn')
-            .attr('id', 'addBtn'+numAddBtn)
-            .attr('value', numAddBtn)
+                .html(addBtnHtml)
+                .attr('class', 'addBtn')
+                .attr('id', 'addBtn'+numAddBtn)
+                .attr('value', numAddBtn)
         var addLayerAgain = d3.selectAll('.addBtn').on('click', addLayerFunc)
+        const highlightLayer = d3.selectAll('.addLayerDiv').on('mouseover', function(){
+            d3.select(this).style('border', '5px solid pink')
+        })
+        const deHighlightLayer = d3.selectAll('.addLayerDiv').on('mouseleave', function(){
+            d3.select(this).style('border', 'none')
+        })
+        console.log(modelLayers)
         })
         //
     }
@@ -353,60 +403,76 @@ const addLayerFunc = function () {
 }
 var addLayer = d3.selectAll('.addBtn').on('click', addLayerFunc)
 
-const chooseLib = d3.selectAll('.library').on('click', function(){
+const libAreas = ['PytorchArea', 'tensorflowArea', 'kerasArea']
+const chooseLib = d3.selectAll('.library').on('click', function(){   
+    console.log(d3.select('.MLstep .active')) 
+    const step = d3.select('.MLstep .active').property('value');
+    for(i = 0; i < 3; i++){
+        d3.selectAll('.' + libAreas[i]).style('display', 'none')
+        d3.select('#' + step + libAreas[i])
+            .attr('class', libAreas[i] + 'active')
+        d3.selectAll('.' + libAreas[i]).select('.active').style('display', 'block')
+    }
     d3.selectAll('.library').style('border', 'none')
     d3.select(this).style('border-top', '2px solid red')
     console.log('#'.concat(d3.selectAll('.MLstep.active').property('id'), 'Area'))
     d3.selectAll('#'.concat(d3.selectAll('.MLstep.active').property('id'), 'Area')).remove()
     currLib = d3.select(this).property('value')
-    const codeSpace = d3.select('.codeSpace').append('div')
-        .attr('class', 'codeArea')
-        .attr('id', ''.concat(d3.selectAll('.MLstep.active').property('id'), 'Area'))
-    if(currLib == 'Pytorch'){
-        codeSpace.append('p').append('text')
-            .text('import torch.nn as nn')
-        codeSpace.append('p').append('text')
-            .html('class Net(nn.Module):')
-        const PytorchInit =  codeSpace.append('p')
-            .attr('class', 'PytorchInit')
-        PytorchInit.append('p').append('text')
-            .html('&emsp;def __init__(self):')
-        PytorchInit.append('text')
-            .html('&emsp;&emsp;super(Net, self).__init__()')
-        
-        const PytorchForward = codeSpace.append('p')
-            .attr('class', 'PytorchForward')
-        PytorchForward.append('text')
-            .html('&emsp;def forward(self, x):')
+    // const codeSpace = d3.select('.codeSpace').append('div')
+    //     .attr('class', 'codeArea')
+    //     .attr('id', ''.concat(d3.selectAll('.MLstep.active').property('id'), 'Area'))
+    const codeSpace = d3.select('.codeSpace').select('#' + step + currLib + 'Area')
+    if(step == 'model'){
+        if(currLib == 'Pytorch'){
+            codeSpace.append('p').append('text')
+                .text('import torch.nn as nn')
+            codeSpace.append('p').append('text')
+                .html('class Net(nn.Module):')
+            const PytorchInit =  codeSpace.append('p')
+                .attr('class', 'PytorchInit')
+            PytorchInit.append('p').append('text')
+                .html('&emsp;def __init__(self):')
+            PytorchInit.append('text')
+                .html('&emsp;&emsp;super(Net, self).__init__()')
+            
+            const PytorchForward = codeSpace.append('p')
+                .attr('class', 'PytorchForward')
+            PytorchForward.append('text')
+                .html('&emsp;def forward(self, x):')
 
-        modelLayers.forEach(function(e, i){
-            console.log(e);
-            const layerName = modelLayers.layer;
-            console.log(layerNames[0]);
-            if(layerName == layerNames[0]){
+            modelLayers.forEach(function(e, i){
                 console.log(e);
-                PytorchInit.append('p')
-                    .append('span')
-                    .html(String.concat('&emsp;&emsp;self.conv', i, 'nn.Conv2d( ', inputsizes[i], outputSizes[i]) )
-                PytorchInit.append('select')
-                    .attr('id', String.concat('self.conv ', i))
-                d3.select(String.concat('#self.conv ', i)).selectAll('option').data(filterSizes)
-                    .enter().append('option')
-                    .attr('value', d => d)
-                    .html(d =>{ return d + '*' + d})
-            } else if(layerName == layerNames[1]){
+                const layerName = modelLayers.layer;
+                console.log(layerNames[0]);
+                if(layerName == layerNames[0]){
+                    console.log(e);
+                    PytorchInit.append('p')
+                        .append('span')
+                        .html(String.concat('&emsp;&emsp;self.conv', i, 'nn.Conv2d( ', inputsizes[i], outputSizes[i], ) )
+                    PytorchInit.append('select')
+                        .attr('id', String.concat('self.conv ', i))
+                    d3.select(String.concat('#self.conv ', i)).selectAll('option').data(filterSizes)
+                        .enter().append('option')
+                        .attr('value', d => d)
+                        .html(d =>{ return d + '*' + d})
+                } else if(layerName == layerNames[1]){
 
-            } else if(layerName == layerNames[2]){
+                } else if(layerName == layerNames[2]){
 
-            } else if(layerName == layerNames[3]){
-                
-            }
+                } else if(layerName == layerNames[3]){
+                    
+                }
 
-        })
-        codeSpace.append('text').text('net = Net()')
-    } else if(currLib == 'tensorflow'){
+            })
+            codeSpace.append('text').text('net = Net()')
+        } else if(currLib == 'tensorflow'){
 
-    } else if(currLib == 'keras'){
+        } else if(currLib == 'keras'){
+
+        }
+    } else if (step == 'preprocess'){
+
+    } else if (step == 'result'){
 
     }
 })
@@ -416,19 +482,15 @@ const mlStepBtns = d3.selectAll('.MLstep')
 mlStepBtns.on('click',function () {
     var i, tabcontent, tablinks;
     tabcontent = document.getElementsByClassName("codeArea");
-    console.log(tabcontent)
     for (i = 0; i < tabcontent.length; i++) {
       tabcontent[i].style.display = "none";
     }
-    console.log(tabcontent)
 
     tablinks = document.getElementsByClassName("MLstep");
-    console.log(tablinks)
 
     for (i = 0; i < tablinks.length; i++) {
       tablinks[i].className = tablinks[i].className.replace(" active", "");
     }
-    console.log(tablinks)
     document.getElementById(d3.select(this).property('id').concat('Area')).style.display = "block";
     d3.select(this).attr('class', 'MLstep active')
     // evt.currentTarget.className += " active";
