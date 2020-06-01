@@ -1,6 +1,3 @@
-import {MnistData} from './data.js';
-
-
 
 function translate(x, y) {
     return `translate(${x}, ${y})`
@@ -404,75 +401,61 @@ const addLayerFunc = function () {
 var addLayer = d3.selectAll('.addBtn').on('click', addLayerFunc)
 
 const libAreas = ['PytorchArea', 'tensorflowArea', 'kerasArea']
-const chooseLib = d3.selectAll('.library').on('click', function(){   
-    console.log(d3.select('.MLstep .active')) 
-    const step = d3.select('.MLstep .active').property('value');
-    for(i = 0; i < 3; i++){
-        d3.selectAll('.' + libAreas[i]).style('display', 'none')
-        d3.select('#' + step + libAreas[i])
-            .attr('class', libAreas[i] + 'active')
-        d3.selectAll('.' + libAreas[i]).select('.active').style('display', 'block')
-    }
+
+const chooseLib = d3.selectAll('.library').on('click', function(){
     d3.selectAll('.library').style('border', 'none')
     d3.select(this).style('border-top', '2px solid red')
     console.log('#'.concat(d3.selectAll('.MLstep.active').property('id'), 'Area'))
     d3.selectAll('#'.concat(d3.selectAll('.MLstep.active').property('id'), 'Area')).remove()
     currLib = d3.select(this).property('value')
-    // const codeSpace = d3.select('.codeSpace').append('div')
-    //     .attr('class', 'codeArea')
-    //     .attr('id', ''.concat(d3.selectAll('.MLstep.active').property('id'), 'Area'))
-    const codeSpace = d3.select('.codeSpace').select('#' + step + currLib + 'Area')
-    if(step == 'model'){
-        if(currLib == 'Pytorch'){
-            codeSpace.append('p').append('text')
-                .text('import torch.nn as nn')
-            codeSpace.append('p').append('text')
-                .html('class Net(nn.Module):')
-            const PytorchInit =  codeSpace.append('p')
-                .attr('class', 'PytorchInit')
-            PytorchInit.append('p').append('text')
-                .html('&emsp;def __init__(self):')
-            PytorchInit.append('text')
-                .html('&emsp;&emsp;super(Net, self).__init__()')
-            
-            const PytorchForward = codeSpace.append('p')
-                .attr('class', 'PytorchForward')
-            PytorchForward.append('text')
-                .html('&emsp;def forward(self, x):')
+    const codeSpace = d3.select('.codeSpace').append('div')
+        .attr('class', 'codeArea')
+        .attr('id', ''.concat(d3.selectAll('.MLstep.active').property('id'), 'Area'))
+    if(currLib == 'Pytorch'){
+        codeSpace.append('p').append('text')
+            .text('import torch.nn as nn')
+        codeSpace.append('p').append('text')
+            .html('class Net(nn.Module):')
+        const PytorchInit =  codeSpace.append('p')
+            .attr('class', 'PytorchInit')
+        PytorchInit.append('p').append('text')
+            .html('&emsp;def __init__(self):')
+        PytorchInit.append('text')
+            .html('&emsp;&emsp;super(Net, self).__init__()')
+        
+        const PytorchForward = codeSpace.append('p')
+            .attr('class', 'PytorchForward')
+        PytorchForward.append('text')
+            .html('&emsp;def forward(self, x):')
 
-            modelLayers.forEach(function(e, i){
+        modelLayers.forEach(function(e, i){
+            console.log(e);
+            const layerName = modelLayers.layer;
+            console.log(layerNames[0]);
+            if(layerName == layerNames[0]){
                 console.log(e);
-                const layerName = modelLayers.layer;
-                console.log(layerNames[0]);
-                if(layerName == layerNames[0]){
-                    console.log(e);
-                    PytorchInit.append('p')
-                        .append('span')
-                        .html(String.concat('&emsp;&emsp;self.conv', i, 'nn.Conv2d( ', inputsizes[i], outputSizes[i], ) )
-                    PytorchInit.append('select')
-                        .attr('id', String.concat('self.conv ', i))
-                    d3.select(String.concat('#self.conv ', i)).selectAll('option').data(filterSizes)
-                        .enter().append('option')
-                        .attr('value', d => d)
-                        .html(d =>{ return d + '*' + d})
-                } else if(layerName == layerNames[1]){
+                PytorchInit.append('p')
+                    .append('span')
+                    .html(String.concat('&emsp;&emsp;self.conv', i, 'nn.Conv2d( ', inputsizes[i], outputSizes[i]) )
+                PytorchInit.append('select')
+                    .attr('id', String.concat('self.conv ', i))
+                d3.select(String.concat('#self.conv ', i)).selectAll('option').data(filterSizes)
+                    .enter().append('option')
+                    .attr('value', d => d)
+                    .html(d =>{ return d + '*' + d})
+            } else if(layerName == layerNames[1]){
 
-                } else if(layerName == layerNames[2]){
+            } else if(layerName == layerNames[2]){
 
-                } else if(layerName == layerNames[3]){
-                    
-                }
+            } else if(layerName == layerNames[3]){
+                
+            }
 
-            })
-            codeSpace.append('text').text('net = Net()')
-        } else if(currLib == 'tensorflow'){
+        })
+        codeSpace.append('text').text('net = Net()')
+    } else if(currLib == 'tensorflow'){
 
-        } else if(currLib == 'keras'){
-
-        }
-    } else if (step == 'preprocess'){
-
-    } else if (step == 'result'){
+    } else if(currLib == 'keras'){
 
     }
 })
@@ -495,34 +478,3 @@ mlStepBtns.on('click',function () {
     d3.select(this).attr('class', 'MLstep active')
     // evt.currentTarget.className += " active";
 })
-
-
-
-async function showExamples(data) {
-    // Create a container in the visor
-    const surface = dataSvg
-
-    // Get the examples
-    const examples = data.nextTestBatch(20);
-    const numExamples = examples.xs.shape[0];
-
-    // Create a canvas element to render each example
-    for (let i = 0; i < numExamples; i++) {
-        const imageTensor = tf.tidy(() => {
-            // Reshape the image to 28x28 px
-            return examples.xs
-                .slice([i, 0], [1, examples.xs.shape[1]])
-                .reshape([28, 28, 1]);
-        });
-
-        const canvas = document.createElement('canvas');
-        canvas.width = 28;
-        canvas.height = 28;
-        canvas.style = 'margin: 4px;';
-        await tf.browser.toPixels(imageTensor, canvas);
-        surface.drawArea.appendChild(canvas);
-
-        imageTensor.dispose();
-    }
-}
-
