@@ -88,16 +88,18 @@
                 <option value="0.8">0.8</option>
             </select>
             <i class="fas fa-arrows-alt-v fa-3x" style = 'font-size: 50px; text-align: center; display: block;'></i>
-            <button class = 'library' id = 'Pytorch'>Pytorch</button>
-            <button class = 'library' id = 'tensorflow'>tensorflow</button>
-            <button class = 'library' id = 'keras'>keras</button>
-            <button class = 'MLstep' id = 'resultCode'>Result</button>
-            <button class = 'MLstep' id = 'modelCode'>Model</button>
+            <button class = 'library' id = 'Pytorch' value = 'Pytorch'>Pytorch</button>
+            <button class = 'library' id = 'tensorflow' value = 'tensorflow'>tensorflow</button>
+            <button class = 'library' id = 'keras' value = 'keras'>keras</button>
+            <button class = 'MLstep' id = 'resultCode' >Result</button>
+            <button class = 'MLstep active' id = 'modelCode'>Model</button>
             <button class = 'MLstep' id = 'preprocessCode'>Preprocess</button>
         </div>
         
         <div class = 'codeSpace'>
-
+            <div class = 'codeArea' id = 'preprocessCodeArea' style = 'display:none'></div>
+            <div class = 'codeArea' id = 'modelCodeArea'></div>
+            <div class = 'codeArea' id = 'resultCodeArea' style = 'display:none'></div>
         </div>
         <script src="https://d3js.org/d3.v5.min.js"></script>
         <script src="d3_main.js" type = 'module'></script>

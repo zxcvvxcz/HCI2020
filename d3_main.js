@@ -1,5 +1,7 @@
 import {MnistData} from './data.js';
 
+
+
 function translate(x, y) {
     return `translate(${x}, ${y})`
 }
@@ -7,10 +9,10 @@ const [btnSvgWidth, btnSvgHeight] = [300, 100];
 const [iconWidth, iconHeight] = [50, 50];
 const playClick = function () {
     
-    if(this.innerHTML === '<i class="fas fa-play-circle fa-3x"></i>'){   //play
+    if(this.innerHTML == '<i class="fas fa-play-circle fa-3x"></i>'){   //play
         this.innerHTML = '<i class="fas fa-pause-circle fa-3x"></i>';
     }
-    else if(this.innerHTML === '<i class="fas fa-pause-circle fa-3x"></i>'){  //pause
+    else if(this.innerHTML == '<i class="fas fa-pause-circle fa-3x"></i>'){  //pause
         this.innerHTML = '<i class="fas fa-play-circle fa-3x"></i>';
     }
     else{   //stop
@@ -76,6 +78,7 @@ let addBtns = [0];
 let inputSizes = [28];
 let outputSizes = [];
 
+let currLib = 'Pytorch'
 let PytorchInit = [];
 let PytorchForward = [];
 let PytorchCodes = [PytorchInit, PytorchForward];
@@ -84,7 +87,7 @@ let kerasCodes = [];
 let modelCodes = [PytorchCodes, tensorflowCodes, kerasCodes];
 // const setLearningRate = d3.select('.learningRate').on('change')
 const setLayer = (layer, i, inp, outp, spliceNum) => {
-    if (layer === layerNames[0]){
+    if (layer == layerNames[0]){
         modelLayers.splice(i, spliceNum, {
             layer : layerNames[0],
             input : inp,
@@ -95,12 +98,12 @@ const setLayer = (layer, i, inp, outp, spliceNum) => {
             channelOut: 1,
             output : outp, 
         })
-    } else if (layer === layerNames[1]){
+    } else if (layer == layerNames[1]){
         modelLayers.splice(i, spliceNum, {
             layer : layerNames[1],
             method : activationLayers[0], //ReLU
         })
-    } else if (layer === layerNames[2]){
+    } else if (layer == layerNames[2]){
         modelLayers.splice(i, spliceNum, {
             layer : layerNames[2],
             filterSize : filterSizes[0],
@@ -108,7 +111,7 @@ const setLayer = (layer, i, inp, outp, spliceNum) => {
             padding : paddings[0],
             output : outp,
         })
-    } else if (layer === layerNames[3]){
+    } else if (layer == layerNames[3]){
         modelLayers.splice(i, spliceNum, {
             layer : layerNames[3],
             input : inp,
@@ -317,9 +320,89 @@ const addLayerFunc = function () {
 }
 var addLayer = d3.selectAll('.addBtn').on('click', addLayerFunc)
 
-const updateLayer = () => {
+const chooseLib = d3.selectAll('.library').on('click', function(){
+    d3.selectAll('.library').style('border', 'none')
+    d3.select(this).style('border-top', '2px solid red')
+    console.log('#'.concat(d3.selectAll('.MLstep.active').property('id'), 'Area'))
+    d3.selectAll('#'.concat(d3.selectAll('.MLstep.active').property('id'), 'Area')).remove()
+    currLib = d3.select(this).property('value')
+    const codeSpace = d3.select('.codeSpace').append('div')
+        .attr('class', 'codeArea')
+        .attr('id', ''.concat(d3.selectAll('.MLstep.active').property('id'), 'Area'))
+    if(currLib == 'Pytorch'){
+        codeSpace.append('p').append('text')
+            .text('import torch.nn as nn')
+        codeSpace.append('p').append('text')
+            .html('class Net(nn.Module):')
+        const PytorchInit =  codeSpace.append('p')
+            .attr('class', 'PytorchInit')
+        PytorchInit.append('p').append('text')
+            .html('&emsp;def __init__(self):')
+        PytorchInit.append('text')
+            .html('&emsp;&emsp;super(Net, self).__init__()')
+        
+        const PytorchForward = codeSpace.append('p')
+            .attr('class', 'PytorchForward')
+        PytorchForward.append('text')
+            .html('&emsp;def forward(self, x):')
 
-}
+        modelLayers.forEach(function(e, i){
+            console.log(e);
+            const layerName = modelLayers.layer;
+            console.log(layerNames[0]);
+            if(layerName == layerNames[0]){
+                console.log(e);
+                PytorchInit.append('p')
+                    .append('span')
+                    .html(String.concat('&emsp;&emsp;self.conv', i, 'nn.Conv2d( ', inputsizes[i], outputSizes[i]) )
+                PytorchInit.append('select')
+                    .attr('id', String.concat('self.conv ', i))
+                d3.select(String.concat('#self.conv ', i)).selectAll('option').data(filterSizes)
+                    .enter().append('option')
+                    .attr('value', d => d)
+                    .html(d =>{ return d + '*' + d})
+            } else if(layerName == layerNames[1]){
+
+            } else if(layerName == layerNames[2]){
+
+            } else if(layerName == layerNames[3]){
+                
+            }
+
+        })
+        codeSpace.append('text').text('net = Net()')
+    } else if(currLib == 'tensorflow'){
+
+    } else if(currLib == 'keras'){
+
+    }
+})
+
+
+const mlStepBtns = d3.selectAll('.MLstep')
+mlStepBtns.on('click',function () {
+    var i, tabcontent, tablinks;
+    tabcontent = document.getElementsByClassName("codeArea");
+    console.log(tabcontent)
+    for (i = 0; i < tabcontent.length; i++) {
+      tabcontent[i].style.display = "none";
+    }
+    console.log(tabcontent)
+
+    tablinks = document.getElementsByClassName("MLstep");
+    console.log(tablinks)
+
+    for (i = 0; i < tablinks.length; i++) {
+      tablinks[i].className = tablinks[i].className.replace(" active", "");
+    }
+    console.log(tablinks)
+    document.getElementById(d3.select(this).property('id').concat('Area')).style.display = "block";
+    d3.select(this).attr('class', 'MLstep active')
+    // evt.currentTarget.className += " active";
+})
+
+
+
 async function showExamples(data) {
     // Create a container in the visor
     const surface = dataSvg
