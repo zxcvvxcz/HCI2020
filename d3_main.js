@@ -123,8 +123,11 @@ const closeFunc = function(){
     d3.select(this.parentNode.parentNode).remove()
 }
 const makeLayer = function (layerDiv, i, value) {
-    layerDiv.attr('class', 'layerVis')
-    
+    console.log('Make layer')
+    layerDiv.attr('class', 'layerVis'.concat(' ', value))
+    // const i = d3.select(layerDiv.parentNode.selectAll('.addLayerBtn')).each(function(d, i){
+    //     if(d == layerDiv) return i;
+    // })
     console.log('i:' + i + ' value: ' + value)
     layerDiv.append('button')
         .html(closeBtnHtml)
@@ -265,10 +268,20 @@ const makeLayer = function (layerDiv, i, value) {
 const addBtnHtml = "<i class = 'fas fa-plus-circle fa'></i>"
 const closeBtnHtml = "<i class = 'fas fa-window-close fa'></i>"
 const addLayerFunc = function () {
+    console.log(this.parentNode.parentNode)
     const newLayers = d3.select(this.parentNode.parentNode);
-    const newDiv = newLayers.append('div')
-        .attr('class', 'addLayerDiv')
-        .attr('id', 'LayerDiv' + numLayer)
+    console.log(this.parentNode.nextElementSibling)
+    let newDiv;
+    if(this.parentNode.nextElementSibling === null){
+        newDiv = newLayers.append('div')
+    }
+    else{
+        newDiv = d3.select(this).select(function(){
+            return this.parentNode.parentNode.insertBefore(document.createElement("div"), this.parentNode.nextElementSibling);
+        })
+    }
+    newDiv.attr('class', 'addLayerDiv')
+        .attr('id','LayerDiv' + numLayer)
     const newButtons = newDiv.append('div')
         .attr('class', 'addLayerGroup')
         .attr('id', 'Layer' + numLayer)
@@ -287,15 +300,35 @@ const addLayerFunc = function () {
         newButton.on('click', function(){
             i = layers.indexOf(d3.select(this).property('id'));
             var value = d3.select(this).property('value');
-            setLayer(value, i, inputSizes[i], outputSizes[i], 0)
+            // setLayer(value, i, inputSizes[i], outputSizes[i], 0)
             // makeLayer -> deletion here
+            const siblingGPNode = this.parentNode.parentNode.nextElementSibling;
             d3.select(this.parentNode.parentNode).remove()
-            const newLayer = newLayers.append('div')
-                .style('width', '100px')
-                .style('height', '400px')
-                .style('display', 'inline-block')
+            // let newDiv;
+            // if(this.parentNode.nextElementSibling === null){
+            //     newDiv = newLayers.append('div')
+            // }else{
+            //     newDiv = d3.select(this).select(function(){
+            //         return this.parentNode.parentNode.insertBefore(document.createElement("div"), this.parentNode.nextElementSibling);
+            //     })
+            // }
+            let newLayer;
+            console.log('sib: '+this.parentNode.nextElementSibling)
+            console.log('grandparent: '+this.parentNode.parentNode)
+            if(this.parentNode.nextElementSibling === null){
+                newLayer = newLayers.append('div')
+            } else{
+                newLayer = newLayers.select(function(){
+                    console.log(this.parentNode)
+                    console.log(this.children)
+                    return this
+                        .insertBefore(document.createElement("div"), siblingGPNode);
+                })
+            }
+            newLayer.attr('class', 'addLayerDiv newLayer')
             const newNewLayer = newLayer.append('div')
             makeLayer(newNewLayer, i, value)
+            // makeLayer(newNewLayer, value)
             newLayer.append('button')
             .html(addBtnHtml)
             .attr('class', 'addBtn')
