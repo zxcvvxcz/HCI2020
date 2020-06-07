@@ -113,13 +113,11 @@ const filterSizes = [3, 5];
 const strides = [1, 2];
 const paddings = [0, 1];
 const learningRates = [0.001, 0.002, 0.003, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.1];
-
+const poolFilterSizes = [2, 3, 4];
 let numLayer = 0;
 let numAddBtn = 1;
-let layers = [];
+// let layers = [];
 let addBtns = [0];
-let inputSizes = [28] * 10;
-let outputSizes = [10] * 10;
 
 let currLib = 'Pytorch'
 let PytorchInit = [];
@@ -129,49 +127,13 @@ let tensorflowCodes = [];
 let kerasCodes = [];
 let modelCodes = [PytorchCodes, tensorflowCodes, kerasCodes];
 // const setLearningRate = d3.select('.learningRate').on('change')
-const setLayer = (layer, i, inp, outp, spliceNum) => {
-    if (layer == layerNames[0]){
-        modelLayers.splice(i, spliceNum, {
-            layer : layerNames[0],
-            input : inp,
-            filterSize : filterSizes[0],
-            stride : strides[0],
-            padding : paddings[0],
-            channelIn: 1,
-            channelOut: 1,
-            output : outp, 
-        })
-    } else if (layer == layerNames[1]){
-        modelLayers.splice(i, spliceNum, {
-            layer : layerNames[1],
-            method : activationLayers[0], //ReLU
-        })
-    } else if (layer == layerNames[2]){
-        modelLayers.splice(i, spliceNum, {
-            layer : layerNames[2],
-            filterSize : filterSizes[0],
-            stride : strides[0],
-            padding : paddings[0],
-            output : outp,
-        })
-    } else if (layer == layerNames[3]){
-        modelLayers.splice(i, spliceNum, {
-            layer : layerNames[3],
-            input : inp,
-            output : outp,
-        })
-    }
-}
 const closeFunc = function(){
     d3.select(this.parentNode.parentNode).remove()
 }
-const makeLayer = function (layerDiv, i, value) {
+const makeLayer = function (layerDiv, prevSibling, value) {
     console.log('Make layer')
     layerDiv.attr('class', 'layerVis'.concat(' ', value))
-    // const i = d3.select(layerDiv.parentNode.selectAll('.addLayerBtn')).each(function(d, i){
-    //     if(d == layerDiv) return i;
-    // })
-    console.log('i:' + i + ' value: ' + value)
+    console.log('value: ' + value)
     layerDiv.append('button')
         .html(closeBtnHtml)
         .attr('class', 'closeBtn')
@@ -186,40 +148,42 @@ const makeLayer = function (layerDiv, i, value) {
         //addLayerFunc
         d3.select(this).addLayerFunc();
     })
+    let inputSize = 28
+    let outputSize;
+    console.log(prevSibling)
+    if(prevSibling.classList.contains('newLayer')){
+        inputSize = Number(d3.select(prevSibling).select('.layerVis').select('.outputTextField').node().innerText);
+    }
     if(value == layerNames[0]){
         const layerShow = layerDiv.append('svg')
             .attr('width', 90)
             .attr('height', 90)
         const labelInput = layerDiv.append('label')
-            .text('Input: ' + inputSizes[i])
-            .attr('for', '#convInput' + i)
+            .text('Input: ' + inputSize)
+            .style('float', 'left')
         const labelFilter = layerDiv.append('label')
             .text('Filter: ')
-            .attr('for', '#convFilter' + i)
             .style('float', 'left')
         const dropdownFilter = layerDiv.append('select')
-            .attr('id', 'convFilter' + i)
-        d3.select('#convFilter' + i).selectAll('option').data(filterSizes)
+            .attr('class', 'convFilter')
+        dropdownFilter.selectAll('option').data(filterSizes)
             .enter().append('option')
             .attr('value', d => d)
             .html(d =>{ return d + '*' + d})
         const labelStride = layerDiv.append('label')
             .text('Stride: ')
-            .attr('for', '#convStride' + i)
             .style('float', 'left')
         const dropdownStride = layerDiv.append('select')
-            .attr('id', 'convStride' + i)
-        d3.select('#convStride' + i).selectAll('option').data(strides).enter().append('option')
+            .attr('class', 'convStride')
+        dropdownStride.selectAll('option').data(strides).enter().append('option')
             .attr('value', d => d)
             .html(d => d)
-
         const labelPadding = layerDiv.append('label')
             .text('Padding: ')
-            .attr('for', '#convPadding' + i)
             .style('float', 'left')
         const dropdownPadding = layerDiv.append('select')
-            .attr('id', 'convPadding' + i)
-        d3.select('#convPadding' + i).selectAll('option').data(paddings).enter().append('option')
+            .attr('class', 'convPadding')
+        dropdownPadding.selectAll('option').data(paddings).enter().append('option')
             .attr('value', d => d)
             .html(d => d)
         const labelChanIn = layerDiv.append('label')
@@ -228,12 +192,20 @@ const makeLayer = function (layerDiv, i, value) {
         const labelChanOut = layerDiv.append('label')
             .text('Channel out: 1')
             .style('float', 'left')
+
+        let f = dropdownFilter.property('value')
+        let p = dropdownPadding.property('value')
+        let s = dropdownStride.property('value')
+        outputSize = Math.round((inputSize + 2 * p - f) / s) + 1
+        console.log('inputSize: ' + inputSize + ', f: ' + f + ", p: " + p + ', s: ' + s + ', outputSize:' + outputSize)
+
         const labelOutput = layerDiv.append('label')
-            .text('Output: ' + outputSizes[i])
-            .attr('for', '#convOutput' + i)
+            .text('Output: ')
             .style('float', 'left')
-        console.log('i : ' + i)
-        showSizes(layerShow, inputSizes[i], outputSizes[i], dropdownFilter.property('value'),
+        const outputTextField = layerDiv.append('text')
+            .attr('class', 'outputTextField')
+            .text(outputSize)
+        showSizes(layerShow, inputSize, outputSize, dropdownFilter.property('value'),
             dropdownStride.property('value'), dropdownPadding.property('value'))
     } else if (value == layerNames[1]){
         const layerShow = layerDiv.append('img')
@@ -243,11 +215,10 @@ const makeLayer = function (layerDiv, i, value) {
         
         const labelActivation = layerDiv.append('label')
             .text('Activation: ')
-            .attr('for', '#activationLayer' + i)
             .style('float', 'left')
         const dropdownActivation = layerDiv.append('select')
-            .attr('id', 'activationLayer' + i)
-        d3.select('#activationLayer' + i).selectAll('option').data(activationLayers).enter().append('option')
+            .attr('class', 'activationLayer')
+        d3.select(this).select('.activationLayer').selectAll('option').data(activationLayers).enter().append('option')
             .attr('value', d => {console.log(d); return d})
             .html(d => d)
         dropdownActivation.on('change', function(){
@@ -259,43 +230,43 @@ const makeLayer = function (layerDiv, i, value) {
             .attr('height', 90)
         
         const labelInput = layerDiv.append('label')
-            .text('Input: ' + inputSizes[i])
-            .attr('for', '#convInput' + i)
+            .text('Input: ' + inputSize)
+            .style('float', 'left')
         const labelFilter = layerDiv.append('label')
             .text('Filter: ')
-            .attr('for', '#convFilter' + i)
             .style('float', 'left')
         const dropdownFilter = layerDiv.append('select')
-            .attr('id', 'convFilter' + i)
-        d3.select('#convFilter' + i).selectAll('option').data(filterSizes)
+            .attr('class', 'poolFilter')
+        dropdownFilter.selectAll('option').data(poolFilterSizes)
             .enter().append('option')
             .attr('value', d => d)
             .html(d =>{ return d + '*' + d})
         const labelStride = layerDiv.append('label')
-            .text('Stride: ')
-            .attr('for', '#convStride' + i)
+            .text('Stride: ' + String(d3.select('.poolFilter').property('value')))
             .style('float', 'left')
-        const dropdownStride = layerDiv.append('select')
-            .attr('id', 'convStride' + i)
-        d3.select('#convStride' + i).selectAll('option').data(strides).enter().append('option')
-            .attr('value', d => d)
-            .html(d => d)
         const labelPadding = layerDiv.append('label')
             .text('Padding: ')
-            .attr('for', '#convPadding' + i)
             .style('float', 'left')
         const dropdownPadding = layerDiv.append('select')
-            .attr('id', 'convPadding' + i)
-        d3.select('#convPadding' + i).selectAll('option').data(paddings).enter().append('option')
+            .attr('class', 'poolPadding')
+        dropdownPadding.selectAll('option').data(paddings).enter().append('option')
             .attr('value', d => d)
             .html(d => d)
-        const labelOutput = layerDiv.append('label')
-            .text('Output: ' + outputSizes[i])
-            .attr('for', '#convOutput' + i)
-            .style('float', 'left')
         
-        showSizes(layerShow, inputSizes[i], outputSizes[i], dropdownFilter.property('value'),
-            dropdownStride.property('value'), dropdownPadding.property('value'))
+        let f = dropdownFilter.property('value')
+        let p = dropdownPadding.property('value')
+        let s = dropdownFilter.property('value')
+        outputSize = Math.round((inputSize + 2 * p - f) / s) + 1
+        console.log('inputSize: ' + inputSize + ', f: ' + f + ", p: " + p + ', s: ' + s + ', outputSize:' + outputSize)
+
+        const labelOutput = layerDiv.append('label')
+            .text('Output: ')
+            .style('float', 'left')
+        const outputTextField = layerDiv.append('text')
+            .attr('class', 'outputTextField')
+            .text(outputSize)
+        showSizes(layerShow, inputSize, outputSize, dropdownFilter.property('value'),
+            dropdownFilter.property('value'), dropdownPadding.property('value'))
     } else if (value == layerNames[3]){
         const layerShow = layerDiv.append('img')
             .attr('width', 90)
@@ -303,11 +274,9 @@ const makeLayer = function (layerDiv, i, value) {
             .attr('src', '/images/linear.png')
         
         const labelInput = layerDiv.append('label')
-            .text('Input: ' + inputSizes[i])
-            .attr('for', '#linearInput' + i)
+            .text('Input: ' + inputSize)
         const labelOutput = layerDiv.append('label')
             .text('Output: 10')
-            .attr('for', '#linearOutput' + i)
             .style('float', 'left')
     }
     
@@ -346,15 +315,12 @@ const addLayerFunc = function () {
         newButton.on('mouseover', function(){ d3.select(this).style('background-color', 'green')})
         newButton.on('mouseleave', function(){ d3.select(this).style('background-color', '#4CAF50')})
         newButton.on('click', function(){
-            i = layers.indexOf(d3.select(this).property('id'));
             var value = d3.select(this).property('value');
-            setLayer(value, i, inputSizes[i], outputSizes[i], 0)
             // makeLayer -> deletion here
-            const siblingGPNode = this.parentNode.parentNode.nextElementSibling;
+            const siblingGPNext = this.parentNode.parentNode.nextElementSibling;
+            const siblingGPPrev = this.parentNode.parentNode.previousElementSibling;
             d3.select(this.parentNode.parentNode).remove()
             let newLayer;
-            console.log('sib: '+this.parentNode.nextElementSibling)
-            console.log('grandparent: '+this.parentNode.parentNode)
             if(this.parentNode.nextElementSibling === null){
                 newLayer = newLayers.append('div')
             } else{
@@ -362,13 +328,14 @@ const addLayerFunc = function () {
                     console.log(this.parentNode)
                     console.log(this.children)
                     return this
-                        .insertBefore(document.createElement("div"), siblingGPNode);
+                        .insertBefore(document.createElement("div"), siblingGPNext);
                 })
             }
             newLayer.attr('class', 'addLayerDiv newLayer')
             const newNewLayer = newLayer.append('div')
-            makeLayer(newNewLayer, i, value)
-            // makeLayer(newNewLayer, value)
+            // makeLayer(newNewLayer, i, value)
+            console.log(siblingGPPrev)
+            makeLayer(newNewLayer, siblingGPPrev, value)
             newLayer.append('button')
                 .html(addBtnHtml)
                 .attr('class', 'addBtn')
@@ -381,14 +348,11 @@ const addLayerFunc = function () {
         const deHighlightLayer = d3.selectAll('.addLayerDiv').on('mouseleave', function(){
             d3.select(this).style('border', 'none')
         })
-        console.log(modelLayers)
         })
         //
     }
     let selected = d3.select(this).property('value')
     console.log('selected: ' +selected)
-    layers.splice(addBtns.indexOf(selected), 0, newButtons.property('id'))
-    console.log(layers)
     newDiv.append('button')
         .html(addBtnHtml)
         .attr('class', 'addBtn')
