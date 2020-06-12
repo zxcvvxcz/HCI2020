@@ -19,7 +19,7 @@
         <!-- Import font awesome 5 for icons -->
         <link rel="stylesheet" 
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.8.2/css/all.min.css"/>
-        <link rel="stylesheet" href="./main.css" />
+        <link rel="stylesheet" type='text/css' href="./main.css" />
     </head>
     
     <body>
@@ -88,24 +88,43 @@
                 <option value="0.8">0.8</option>
             </select>
             <i class="fas fa-arrows-alt-v fa-3x" style = 'font-size: 50px; text-align: center; display: block;'></i>
-            <button class = 'library' id = 'Pytorch' value = 'Pytorch'>Pytorch</button>
+            <button class = 'library active' id = 'Pytorch' value = 'Pytorch'>Pytorch</button>
             <button class = 'library' id = 'tensorflow' value = 'tensorflow'>tensorflow</button>
             <button class = 'library' id = 'keras' value = 'keras'>keras</button>
-            <button class = 'MLstep' id = 'resultCode' >Result</button>
-            <button class = 'MLstep active' id = 'modelCode'>Model</button>
-            <button class = 'MLstep' id = 'preprocessCode'>Preprocess</button>
+            <button class = 'MLstep' id = 'resultCode' value = 'result'>Result</button>
+            <button class = 'MLstep active' id = 'modelCode' value = 'model'>Model</button>
+            <button class = 'MLstep' id = 'preprocessCode' value = 'preprocess'>Preprocess</button>
         </div>
         
         <div class = 'codeSpace'>
-            <div class = 'codeArea' id = 'preprocessCodeArea' style = 'display:none'></div>
-            <div class = 'codeArea' id = 'modelCodeArea'></div>
-            <div class = 'codeArea' id = 'resultCodeArea' style = 'display:none'></div>
+            <div class = 'codeArea' id = 'preprocessCodeArea'></div>
+                <div class = 'PytorchArea' id = 'preprocessPytorchArea' style = 'display:none'></div>
+                <div class = 'tensorflowArea' id = 'preprocesstensorflowArea' style = 'display:none'></div>
+                <div class = 'kerasArea' id = 'preprocesskerasArea' style = 'display:none'></div>
+            <div class = 'codeArea' id = 'modelCodeArea'>
+                <div class = 'PytorchArea' id = 'modelPytorchArea'>
+                    <p>import torch.nn as nn</p>
+                    <p>class Net(nn.Module):</p>
+                    <p>  def __init__(self):</p>
+                    <p>    super(Net, self).__init__()</p>
+                    <div id = '__init__'></div>
+                    <p>  def forward(self, x):</p>
+                    <div id = 'forward'></div>
+                    <p>net = Net()</p>
+                </div>
+                <div class = 'tensorflowArea' id = 'modeltensorflowArea' style = 'display:none'></div>
+                <div class = 'kerasArea' id = 'modelkerasArea' style = 'display:none'></div>
+            </div>
+            <div class = 'codeArea' id = 'resultCodeArea'>
+                <div class = 'PytorchArea' id = 'resultPytorchArea' style = 'display:none'></div>
+                <div class = 'tensorflowArea' id = 'resulttensorflowArea' style = 'display:none'></div>
+                <div class = 'kerasArea' id = 'resultkerasArea' style = 'display:none'></div>
+            </div>
         </div>
         <script src="https://d3js.org/d3.v5.min.js"></script>
         <script src="d3_main.js" type = 'module'></script>
         
     </body>
-    <!-- Import newest d3.js-->
     
     
 </html>

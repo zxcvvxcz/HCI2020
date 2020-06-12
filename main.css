@@ -40,6 +40,41 @@
     margin: 20px 0px;
 }
 
+.entireSquare{
+    fill:white;
+    stroke: black;
+    stroke-width: 1;
+}
+
+.inputSquare{
+    fill: gray;
+}
+
+.padSquare{
+    fill:blue;
+}
+
+.outputSquare{
+    fill:black;
+}
+
+.outputTextField{
+    float:left;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    cursor: default;
+}
+.filter, .input{
+    float:left;
+    clear: both;
+}
+.filterSquare{
+    fill:red;
+}
 .dataSpace, .visSpace, .resultSpace {
     float: left;
     height : 400px;
@@ -87,7 +122,7 @@
     text-decoration: none;
     font-size: 16px;
     cursor: pointer;
-    width: 150px;
+    width: 90px;
     display: block;
 }
 
@@ -114,7 +149,7 @@
 .MLstep{
     float : right;
 }
-.MLstep.active {
+.MLstep.active, .library.active {
     color: #000;
     border-top:2px solid red;
     background-color: aliceblue;
