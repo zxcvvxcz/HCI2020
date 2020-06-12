@@ -83,7 +83,7 @@
                 <option value="0.1">0.1</option>
             </select>
             <label for="momentum">momentum : </label>
-            <select name="" id="">
+            <select id="momentum">
                 <option value="0.9">0.9</option>
                 <option value="0.8">0.8</option>
             </select>
@@ -98,26 +98,116 @@
         
         <div class = 'codeSpace'>
             <div class = 'codeArea' id = 'preprocessCodeArea'></div>
-                <div class = 'PytorchArea' id = 'preprocessPytorchArea' style = 'display:none'></div>
-                <div class = 'tensorflowArea' id = 'preprocesstensorflowArea' style = 'display:none'></div>
-                <div class = 'kerasArea' id = 'preprocesskerasArea' style = 'display:none'></div>
+                <div class = 'PytorchArea' id = 'preprocessPytorchArea' style = 'display:none'>
+                    %matplotlib inline<br><br>
+
+                    import itertools<br>
+                    from IPython.display import Image<br>
+                    from IPython import display<br>
+                    import matplotlib.pyplot as plt<br>
+                    import torch<br>
+                    import torch.optim as optim<br>
+                    import torchvision<br>
+                    
+                    from torchvision import datasets, transforms<br>
+                    import torchvision.transforms as transforms<br>
+
+                    <p>trn_dataset = datasets.MNIST('../mnist_data/',<br>
+                        &emsp;download=True,  <br>
+                        &emsp;train=True,  <br>
+                        &emsp;transform=transforms.Compose([  <br>
+                        &emsp;transforms.ToTensor(), # image to Tensor  <br>
+                        &emsp;transforms.Normalize((0.1307,), (0.3081,)) # image, label  ]))</p>
+
+                    <p>val_dataset = datasets.MNIST(&quot;../mnist_data/&quot;,   <br>
+                        &emsp;download=False,  <br>
+                        &emsp;train=False,  <br>
+                        &emsp;transform= transforms.Compose([  <br>
+                        &emsp;transforms.ToTensor(),  <br>
+                        &emsp;transforms.Normalize((0.1307, ),(0.3081, ))  ]))</p>
+                    <p>batch_size = <span class = 'batchSize'>128</span><br>
+                        trn_loader = torch.utils.data.DataLoader(trn_dataset,  batch_size=batch_size,  shuffle=True)<br>
+                        val_loader = torch.utils.data.DataLoader(val_dataset,  batch_size=batch_size,  shuffle=True)</p>
+                </div>
+                <div class = 'tensorflowArea' id = 'preprocesstensorflowArea' style = 'display:none'>
+                    <p>import tensorflow.compat.v1 as tf<br>
+                        tf.disable_v2_behavior()</p>
+
+                    <p># Download the mnist dataset using keras<br> 
+                    data_train, data_test = tf.keras.datasets.mnist.load_data()</p>
+
+                    <p># Parse images and labels<br>
+                    (train_images, train_labels) = data_train<br>
+                    (test_images, test_labels) = data_test</p>
+                    
+                    <p># Numpy reshape &amp; type casting<br>
+                    train_images = train_images.reshape(train_images.shape[0], 28, 28, 1).astype('float32')<br>
+                    test_images = test_images.reshape(test_images.shape[0], 28, 28, 1).astype('float32')<br>
+                    train_labels = train_labels.astype('int64')<br>
+                    test_labels = test_labels.astype('int64')</p>
+                    <p> # Normalizing the images to the range of [0., 1.]<br>
+                    train_images /= 255.<br>
+                    test_images /= 255.</p>
+                </div>
+                <div class = 'kerasArea' id = 'preprocesskerasArea' style = 'display:none'>
+                
+                </div>
             <div class = 'codeArea' id = 'modelCodeArea'>
                 <div class = 'PytorchArea' id = 'modelPytorchArea'>
                     <p>import torch.nn as nn</p>
                     <p>class Net(nn.Module):</p>
-                    <p>  def __init__(self):</p>
-                    <p>    super(Net, self).__init__()</p>
+                    <p>&emsp;def __init__(self):</p>
+                    <p>&emsp;&emsp;super(Net, self).__init__()</p>
                     <div id = '__init__'></div>
-                    <p>  def forward(self, x):</p>
+                    <p>&emsp;def forward(self, x):</p>
                     <div id = 'forward'></div>
+                    <p>&emsp;&emsp;return x</p>
                     <p>net = Net()</p>
                 </div>
                 <div class = 'tensorflowArea' id = 'modeltensorflowArea' style = 'display:none'></div>
                 <div class = 'kerasArea' id = 'modelkerasArea' style = 'display:none'></div>
             </div>
             <div class = 'codeArea' id = 'resultCodeArea'>
-                <div class = 'PytorchArea' id = 'resultPytorchArea' style = 'display:none'></div>
-                <div class = 'tensorflowArea' id = 'resulttensorflowArea' style = 'display:none'></div>
+                <div class = 'PytorchArea' id = 'resultPytorchArea' style = 'display:none'>
+                    <p># loss</p>
+                    <p>criterion = nn.CrossEntropyLoss()</p>
+                    <p># backpropagation method</p>
+                    <p>optimizer = optim.SGD(net.parameters(), lr=<span class='learningRate'>learning_rate</span>, momentum=0.9)</p>
+                    <p># hyper-parameters</p>
+                    <p>num_epochs = <span class = 'epoch'></span></p>
+                    <p>num_batches = len(trn_loader)</p>
+                </div>
+                <div class = 'tensorflowArea' id = 'resulttensorflowArea' style = 'display:none'>
+                    <p>with tf.Session(graph=graph) as sess: <br> 
+                        &emsp;sess.run(init)</p>
+
+                    <p>&emsp;for epoch in range(<span class = 'epoch'></span>): <br>
+                        &emsp;&emsp;sess.run(train_init) <br>
+                        &emsp;&emsp;total_loss = 0 <br>
+                        &emsp;&emsp;total_corrects = 0</p>
+
+                    <p> &emsp;&emsp;try: <br>
+                        &emsp;&emsp;&emsp;while True: <br>
+                        &emsp;&emsp;&emsp;&emsp;_, loss_val, corrects_val = sess.run([train_op, loss, num_correct_preds]) <br>
+                        &emsp;&emsp;&emsp;&emsp;total_loss += loss_val <br>
+                        &emsp;&emsp;&emsp;&emsp;total_corrects += corrects_val <br>
+                        &emsp;&emsp;except tf.errors.OutOfRangeError: <br>
+                        &emsp;&emsp;&emsp;pass</p>
+
+                    <p> &emsp;&emsp;print('Epoch: %02d' % (epoch + 1), 'Loss = {:2.4f}'.format(total_loss * batch_size / 60000), 'Train accuracy = {:2.4f}'.format(total_corrects / 60000))</p>
+
+                    <p> &emsp;sess.run(test_init) <br>
+                        &emsp;total_corrects = 0</p>
+
+                    <p> &emsp;try: <br>
+                        &emsp;&emsp;while True: <br>
+                        &emsp;&emsp;&emsp;corrects_val = sess.run(num_correct_preds) <br>
+                        &emsp;&emsp;&emsp;total_corrects += corrects_val <br>
+                        &emsp;except tf.errors.OutOfRangeError: <br>
+                        &emsp;pass</p>
+
+                    <p> &emsp;print('Test accuracy = {:2.4f}'.format(total_corrects / 10000))</p>
+                </div>
                 <div class = 'kerasArea' id = 'resultkerasArea' style = 'display:none'></div>
             </div>
         </div>

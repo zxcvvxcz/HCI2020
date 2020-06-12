@@ -1,21 +1,175 @@
+/***************** MNIST DATA ********************/
 
-export let layerInfo;   //layer information for machine learning
+/**
+ * @license
+ * Copyright 2018 Google LLC. All Rights Reserved.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================================
+ */
 
+const IMAGE_SIZE = 784;
+const NUM_CLASSES = 10;
+const NUM_DATASET_ELEMENTS = 65000;
+
+let NUM_TRAIN_ELEMENTS = 60000;
+let NUM_TEST_ELEMENTS = NUM_DATASET_ELEMENTS - NUM_TRAIN_ELEMENTS;
+
+const MNIST_IMAGES_SPRITE_PATH =
+    'https://storage.googleapis.com/learnjs-data/model-builder/mnist_images.png';
+const MNIST_LABELS_PATH =
+    'https://storage.googleapis.com/learnjs-data/model-builder/mnist_labels_uint8';
+
+/**
+ * A class that fetches the sprited MNIST dataset and returns shuffled batches.
+ *
+ * NOTE: This will get much easier. For now, we do data fetching and
+ * manipulation manually.
+ */
+class MnistData {
+  constructor() {
+    this.shuffledTrainIndex = 0;
+    this.shuffledTestIndex = 0;
+  }
+
+  async load() {
+    // Make a request for the MNIST sprited image.
+    const img = new Image();
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const imgRequest = new Promise((resolve, reject) => {
+      img.crossOrigin = '';
+      img.onload = () => {
+        img.width = img.naturalWidth;
+        img.height = img.naturalHeight;
+
+        const datasetBytesBuffer =
+            new ArrayBuffer(NUM_DATASET_ELEMENTS * IMAGE_SIZE * 4);
+
+        const chunkSize = 5000;
+        canvas.width = img.width;
+        canvas.height = chunkSize;
+
+        for (let i = 0; i < NUM_DATASET_ELEMENTS / chunkSize; i++) {
+          const datasetBytesView = new Float32Array(
+              datasetBytesBuffer, i * IMAGE_SIZE * chunkSize * 4,
+              IMAGE_SIZE * chunkSize);
+          ctx.drawImage(
+              img, 0, i * chunkSize, img.width, chunkSize, 0, 0, img.width,
+              chunkSize);
+
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+          for (let j = 0; j < imageData.data.length / 4; j++) {
+            // All channels hold an equal value since the image is grayscale, so
+            // just read the red channel.
+            datasetBytesView[j] = imageData.data[j * 4] / 255;
+          }
+        }
+        this.datasetImages = new Float32Array(datasetBytesBuffer);
+
+        resolve();
+      };
+      img.src = MNIST_IMAGES_SPRITE_PATH;
+    });
+
+    const labelsRequest = fetch(MNIST_LABELS_PATH);
+    const [imgResponse, labelsResponse] =
+        await Promise.all([imgRequest, labelsRequest]);
+
+    this.datasetLabels = new Uint8Array(await labelsResponse.arrayBuffer());
+
+    // Create shuffled indices into the train/test set for when we select a
+    // random dataset element for training / validation.
+    this.trainIndices = tf.util.createShuffledIndices(NUM_TRAIN_ELEMENTS);
+    this.testIndices = tf.util.createShuffledIndices(NUM_TEST_ELEMENTS);
+
+    // Slice the the images and labels into train and test sets.
+    this.trainImages =
+        this.datasetImages.slice(0, IMAGE_SIZE * NUM_TRAIN_ELEMENTS);
+    this.testImages = this.datasetImages.slice(IMAGE_SIZE * NUM_TRAIN_ELEMENTS);
+    this.trainLabels =
+        this.datasetLabels.slice(0, NUM_CLASSES * NUM_TRAIN_ELEMENTS);
+    this.testLabels =
+        this.datasetLabels.slice(NUM_CLASSES * NUM_TRAIN_ELEMENTS);
+  }
+
+  nextTrainBatch(batchSize) {
+    return this.nextBatch(
+        batchSize, [this.trainImages, this.trainLabels], () => {
+          this.shuffledTrainIndex =
+              (this.shuffledTrainIndex + 1) % this.trainIndices.length;
+          return this.trainIndices[this.shuffledTrainIndex];
+        });
+  }
+
+  nextTestBatch(batchSize) {
+    return this.nextBatch(batchSize, [this.testImages, this.testLabels], () => {
+      this.shuffledTestIndex =
+          (this.shuffledTestIndex + 1) % this.testIndices.length;
+      return this.testIndices[this.shuffledTestIndex];
+    });
+  }
+
+  nextBatch(batchSize, data, index) {
+    const batchImagesArray = new Float32Array(batchSize * IMAGE_SIZE);
+    const batchLabelsArray = new Uint8Array(batchSize * NUM_CLASSES);
+
+    for (let i = 0; i < batchSize; i++) {
+      const idx = index();
+
+      const image =
+          data[0].slice(idx * IMAGE_SIZE, idx * IMAGE_SIZE + IMAGE_SIZE);
+      batchImagesArray.set(image, i * IMAGE_SIZE);
+
+      const label =
+          data[1].slice(idx * NUM_CLASSES, idx * NUM_CLASSES + NUM_CLASSES);
+      batchLabelsArray.set(label, i * NUM_CLASSES);
+    }
+
+    const xs = tf.tensor2d(batchImagesArray, [batchSize, IMAGE_SIZE]);
+    const labels = tf.tensor2d(batchLabelsArray, [batchSize, NUM_CLASSES]);
+
+    return {xs, labels};
+  }
+}
+
+
+
+
+
+
+
+/*********** VISUALIZATION ************/
 
 let modelLayers = [];
 let layerNames = ['Conv', 'Acti','Pool', 'Linear'];
-const activationLayers = ['ReLU', 'tanh', 'sigmoid'];
+const activationLayers = ['ReLU', 'Tanh', 'Sigmoid'];
+let usedActivationLayers = [];
 const filterSizes = [3, 5];
 const strides = [1, 2];
 const paddings = [0, 1];
 const learningRates = [0.001, 0.002, 0.003, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.1];
-const poolFilterSizes = [2, 3, 4];
+const poolSizes = [2, 3, 4];
 let numLayer = 0;
 let numAddBtn = 1;
-// let layers = [];
 let addBtns = [0];
+let stopRequested = false;
 
+function channelCheck(prevLayerDiv){
+    if(prevLayerDiv.select('.layerTitleBtn').node().innerText == layerNames[0]){
 
+    }
+}
 function translate(x, y) {
     return `translate(${x}, ${y})`
 }
@@ -113,10 +267,11 @@ function showSizes(svg, inp, outp, filt, str, padd){
 }
 const [btnSvgWidth, btnSvgHeight] = [300, 100];
 const [iconWidth, iconHeight] = [50, 50];
-const playClick = function () {
+const playClick = async function () {
     
     if(this.innerHTML == '<i class="fas fa-play-circle fa-3x"></i>'){   //play
         this.innerHTML = '<i class="fas fa-pause-circle fa-3x"></i>';
+        run();
         //make JSON to be exported
     }
     else if(this.innerHTML == '<i class="fas fa-pause-circle fa-3x"></i>'){  //pause
@@ -140,16 +295,22 @@ const dataRect = dataSpace.append('rect')
     .attr('fill', 'white')
     .style('stroke', d3.rgb(192, 192, 192))
     .style('stroke-width', '2px')
-
+const batchSelect = d3.select('#batchSize').on('change', function(){
+        // BATCH_SIZE = d3.select(this).property('value')
+    })
+const dataSelect = d3.select('#trainData').on('change', function(){
+    NUM_TRAIN_ELEMENTS = d3.select(this).property('value')
+    NUM_TEST_ELEMENTS = NUM_DATASET_ELEMENTS - NUM_TRAIN_ELEMENTS;
+})
 const dataText = dataSpace.append('text')
     .text('Data')
     .attr('x', 30)
     .attr('y', 20)
     
 const dataSizeText = dataSpace.append('text')
-.text('28 * 28')
-.attr('x', 25)
-.attr('y', 90)
+    .text('28 * 28')
+    .attr('x', 25)
+    .attr('y', 90)
 // const dataPicture = dataSpace.append('canvas')
 //     .attr('x', 20)
 //     .attr('y', 50)
@@ -173,13 +334,6 @@ const trainSizeDD = d3.select('#trainData')
 })
 
 let currLib = 'Pytorch'
-// let PytorchInit = [];
-// let PytorchForward = [];
-// let PytorchCodes = [PytorchInit, PytorchForward];
-// let tensorflowCodes = [];
-// let kerasCodes = [];
-// let modelCodes = [PytorchCodes, tensorflowCodes, kerasCodes];
-// const setLearningRate = d3.select('.learningRate').on('change')
 const changeNextInputSize = function(grandParent){
     if(grandParent === null)    return;
     let prevGP = grandParent.previousElementSibling;
@@ -218,23 +372,7 @@ const closeFunc = function(){
     const grandParent = this.parentNode.parentNode;
     const prevGP = grandParent.previousElementSibling;
     changeNextInputSize(grandParent);
-    // if(grandParent.nextElementSibling !== null
-    //     && grandParent.nextElementSibling.className == 'addLayerDiv newLayer'){
-    //     const nextDiv = d3.select(grandParent.nextElementSibling).select('div')
-    //     while(prevGP !== null){
-    //         if(prevGP.className == 'addLayerDiv newLayer'){
-    //             nextDiv.attr('id', d3.select(prevGP).select('.outputTextField').node().innerText)
-    //             console.log('layerDiv id: ' + layerDiv.property('id'))
-    //             nextDiv.select('.input')
-    //             .text('Input: ' + Number(layerDiv.property('id')))
-    //             break;
-    //         }
-    //     }
-    //     if(prevGP === null){
-    //         nextDiv.attr('id', 28)
-    //     } 
-    //     changeInputSize(nextDiv)
-    // }
+    
     d3.select(this.parentNode.parentNode).remove()
 }
 const makeLayer = function (layerDiv, prevSibling, value) {
@@ -302,26 +440,6 @@ const makeLayer = function (layerDiv, prevSibling, value) {
                 .attr('height', outputSize * EXPANDSVG)
             const grandParent = this.parentNode.parentNode
             changeNextInputSize(grandParent)
-            // if(this.parentNode.parentNode.nextElementSibling !== null
-            //     && this.parentNode.parentNode.nextElementSibling.className == 'addLayerDiv newLayer'){
-            //         const nextDiv = d3.select(grandParent.nextElementSibling).select('div')
-            //     while(prevGP !== null){
-            //         if(prevGP.className == 'addLayerDiv newLayer'){
-            //             nextDiv.attr('id', d3.select(prevGP).select('.outputTextField').node().innerText)
-            //             console.log('layerDiv id: ' + layerDiv.property('id'))
-            //             nextDiv.select('.input')
-            //             .text('Input: ' + Number(layerDiv.property('id')))
-            //             break;
-            //         }
-            //     }
-            //     if(prevGP === null){
-            //         nextDiv.attr('id', 28)
-            //     } 
-            //     // changeInputSize(nextDiv)
-            //     // const nextDiv = d3.select(this.parentNode.parentNode.nextElementSibling).select('div')
-            //     nextDiv.attr('id', outputSize)
-            //     changeInputSize(nextDiv)
-            // }
         })
         const labelStride = layerDiv.append('label')
             .text('Stride: ')
@@ -350,12 +468,6 @@ const makeLayer = function (layerDiv, prevSibling, value) {
                 .attr('height', (outputSize + 2 * p) * EXPANDSVG)
             const grandParent = this.parentNode.parentNode
             changeNextInputSize(grandParent)
-            // if(this.parentNode.parentNode.nextElementSibling !== null
-            //     && this.parentNode.parentNode.nextElementSibling.className == 'addLayerDiv newLayer'){
-            //     const nextDiv = d3.select(this.parentNode.parentNode.nextElementSibling).select('div')
-            //     nextDiv.attr('id', outputSize)
-            //     changeInputSize(nextDiv)
-            // }
         })
         const labelPadding = layerDiv.append('label')
             .text('Padding: ')
@@ -392,15 +504,10 @@ const makeLayer = function (layerDiv, prevSibling, value) {
             
             const grandParent = this.parentNode.parentNode
             changeNextInputSize(grandParent);
-            // if(this.parentNode.parentNode.nextElementSibling != null 
-            //     && this.parentNode.parentNode.nextElementSibling.className == 'addLayerDiv newLayer'){
-            //     const nextDiv = d3.select(this.parentNode.parentNode.nextElementSibling).select('div')
-            //     nextDiv.attr('id', outputSize)
-            //     changeInputSize(nextDiv)
-            // }
         })
+        let chanIn = 1; //channel only changes by conv
         const labelChanIn = layerDiv.append('label')
-            .text('Channel in: 1')
+            .text('Channel in: ' + chanIn)
             .style('float', 'left')
         const labelChanOut = layerDiv.append('label')
             .text('Channel out: 1')
@@ -427,6 +534,7 @@ const makeLayer = function (layerDiv, prevSibling, value) {
             .attr('src', '/images/ReLU.png')
         const labelInput = layerDiv.append('label')
             .text('Input: ' + Number(layerDiv.property('id')))
+            .attr('class', 'input')
             .style('float', 'left')
         const labelActivation = layerDiv.append('label')
             .text('Activation: ')
@@ -459,7 +567,7 @@ const makeLayer = function (layerDiv, prevSibling, value) {
             .style('float', 'left')
         const dropdownFilter = layerDiv.append('select')
             .attr('class', 'poolFilter')
-        dropdownFilter.selectAll('option').data(poolFilterSizes)
+        dropdownFilter.selectAll('option').data(poolSizes)
             .enter().append('option')
             .attr('value', d => d)
             .html(d =>{ return d + '*' + d})
@@ -487,12 +595,7 @@ const makeLayer = function (layerDiv, prevSibling, value) {
                 .attr('height', (outputSize) * EXPANDSVG)
 
             const grandParent = this.parentNode.parentNode
-            changeNextInputSize(grandParent)            // if(this.parentNode.parentNode.nextElementSibling !== null
-            //     && this.parentNode.parentNode.nextElementSibling.className == 'addLayerDiv newLayer'){
-            //     const nextDiv = d3.select(this.parentNode.parentNode.nextElementSibling).select('div')
-            //     nextDiv.attr('id', outputSize)
-            //     changeInputSize(nextDiv)
-            // }
+            changeNextInputSize(grandParent)            
         })
         const labelStride = layerDiv.append('label')
             .text('Stride: ' + String(d3.select('.poolFilter').property('value')))
@@ -532,12 +635,7 @@ const makeLayer = function (layerDiv, prevSibling, value) {
                 .attr('y', p * EXPANDSVG)
 
             const grandParent = this.parentNode.parentNode
-            changeNextInputSize(grandParent)            // if(this.parentNode.parentNode.nextElementSibling !== null 
-            //     && this.parentNode.parentNode.nextElementSibling.className == 'addLayerDiv newLayer'){
-            //     const nextDiv = d3.select(this.parentNode.parentNode.nextElementSibling).select('div')
-            //     nextDiv.attr('id', outputSize)
-            //     changeInputSize(nextDiv)
-            // }
+            changeNextInputSize(grandParent)          
         })
         let f = dropdownFilter.property('value')
         let p = dropdownPadding.property('value')
@@ -561,6 +659,7 @@ const makeLayer = function (layerDiv, prevSibling, value) {
         
         const labelInput = layerDiv.append('label')
             .text('Input: ' + Number(layerDiv.property('id')))
+            .attr('class', 'input')
         const labelOutput = layerDiv.append('label')
             .text('Output: ')
             .style('float', 'left')
@@ -638,11 +737,6 @@ const addLayerFunc = function () {
                 d3.select(this).style('border', 'none')
             })
             changeNextInputSize(siblingGPNext)
-            // if(siblingGPNext !== null && siblingGPNext.className == 'addLayerDiv newLayer'){
-            //     const nextDiv = d3.select(siblingGPNext).select('div')
-            //     nextDiv.attr('id', outputSize)
-            //     changeInputSize(nextDiv)
-            // }
         })
     }
     let selected = d3.select(this).property('value')
@@ -694,48 +788,131 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
         // .attr('class', currLib + 'Area')
         // .attr('id', currId)
     if(currLib == 'Pytorch'){
-        // codeSpace.append('p').append('text')
-        //     .text('import torch.nn as nn')
-        // codeSpace.append('p').append('text')
-        //     .html('class Net(nn.Module):')
-        // const PytorchInit =  codeSpace.append('p')
-        //     .attr('class', 'PytorchInit')
-        // PytorchInit.append('p').append('text')
-        //     .html('&emsp;def __init__(self):')
-        // PytorchInit.append('text')
-        //     .html('&emsp;&emsp;super(Net, self).__init__()')
         const PytorchInit = codeSpace.select('#__init__')
         const PytorchForward = codeSpace.select('#forward')
-        PytorchForward.append('text')
-            .html('&emsp;def forward(self, x):')
+        PytorchInit.selectAll('p').remove();
+        PytorchForward.selectAll('p').remove();
         modelLayers = d3.selectAll('.newLayer')
         let numConv = 1, numPool = 1;
         let activations = [];
         modelLayers.each(function(d, i, nodes){
-            const layerName = d3.select(this).select('.layerTitleBtn').node().innerText;
-            const inputSize = Number(d3.select(this).select('.input').node().innerText.replace('Input: ', ''))
-            const outputSize = Number(d3.select(this).select('.outputTextField').node().innerText)
+            const layerDiv = d3.select(this)
+            const layerName = layerDiv.select('.layerTitleBtn').node().innerText;
+            console.log('layerName: ' + layerName);
+            const inputSize = Number(layerDiv.select('.input').node().innerText.replace('Input: ', ''))
+            const outputSize = Number(layerDiv.select('.outputTextField').node().innerText)
+            const PytorchInitParagraph = PytorchInit.append('p')
+            const PytorchForwardParagraph = PytorchForward.append('p')
             if(layerName == layerNames[0]){ //conv
-                PytorchInit.append('p')
-                    .append('span')
-                    .html(String.concat('&emsp;&emsp;self.conv', numConv, 'nn.Conv2d( ', inputsizes[i], outputSizes[i]) )
-                PytorchInit.append('select')
-                    .attr('id', String.concat('self.conv ', numConv))
-                d3.select(String.concat('#self.conv ', numConv)).selectAll('option').data(filterSizes)
+                PytorchInitParagraph.append('span')
+                    .html('&emsp;&emsp;self.conv' + numConv + ' = nn.Conv2d(1, 1, ')
+                const filterSize = layerDiv.select('.convFilter').property('value')
+                console.log(layerDiv.select('.convFilter').property('value'))
+                const dropdownFilter = PytorchInitParagraph.append('select')
+                    .attr('class', 'convFilterCode')
+                dropdownFilter.selectAll('option').data(filterSizes)
                     .enter().append('option')
                     .attr('value', d => d)
-                    .html(d =>{ return d + '*' + d})
+                    .html(d => d)
+                    .property("selected", function(d){ return d === filterSize; })
+                
+                PytorchInitParagraph.append('span')
+                    .text(', ')
+                const strideSize = layerDiv.select('.convStride').property('value')
+                const dropdownStride = PytorchInitParagraph.append('select')
+                    .attr('class', 'convStrideCode')
+                dropdownStride.selectAll('option').data(strides)
+                    .enter().append('option')
+                    .attr('value', d => d)
+                    .html(d => d)
+                    .property("selected", function(d){ return d === strideSize; })
+                PytorchInitParagraph.append('span')
+                    .text(', ')
+                const paddingSize = layerDiv.select('.convPadding').property('value')
+                const dropdownPadding = PytorchInitParagraph.append('select')
+                    .attr('class', 'convPaddingCode')
+                dropdownPadding.selectAll('option').data(paddings)
+                    .enter().append('option')
+                    .attr('value', d => d)
+                    .html(d => d)
+                    .property("selected", function(d){ return d === paddingSize; })
+                PytorchInitParagraph.append('span')
+                    .text(')')
+                //forward
+                PytorchForwardParagraph.append('span')
+                    .html('&emsp;&emsp;x = self.conv' + numConv + '(x)')
                 numConv += 1;
             } else if(layerName == layerNames[1]){
-
+                const activation = layerDiv.select('.activationLayer').property('value')
+                PytorchInitParagraph.append('span')
+                    .html('&emsp;&emsp;self.' + activation + ' = nn.')
+                if(!usedActivationLayers.includes(activation)){
+                    const dropdownActivation = PytorchInitParagraph.append('select')
+                        .attr('class', 'activationLayerCode')
+                    dropdownActivation.selectAll('option').data(activationLayers)
+                        .enter().append('option')
+                        .attr('value', d => d)
+                        .html(d => d)
+                        .property("selected", function(d){ return d === activation; })
+                    PytorchInitParagraph.append('span')
+                        .text('()')
+                    //forward
+                    PytorchForwardParagraph.append('span')
+                        .html('&emsp;&emsp;x = self.' + activation + '(x)')
+                } 
             } else if(layerName == layerNames[2]){
-
-            } else if(layerName == layerNames[3]){
+                PytorchInitParagraph.append('span')
+                    .html('&emsp;&emsp;self.pool' + numPool + ' = nn.MaxPool2d(')
+                const filterSize = layerDiv.select('.poolFilter').property('value')
+                const dropdownFilter = PytorchInitParagraph.append('select')
+                    .attr('class', 'poolFilterCode')
+                dropdownFilter.selectAll('option').data(filterSizes)
+                    .enter().append('option')
+                    .attr('value', d => d)
+                    .html(d => d)
+                    .property("selected", function(d){ return d === filterSize; })
                 
+                PytorchInitParagraph.append('span')
+                    .text(', ')
+                const strideSize = filterSize
+                const dropdownStride = PytorchInitParagraph.append('select')
+                    .attr('class', 'poolStrideCode')
+                dropdownStride.selectAll('option').data(strides)
+                    .enter().append('option')
+                    .attr('value', d => d)
+                    .html(d => d)
+                    .property("selected", function(d){ return d === strideSize; })
+                PytorchInitParagraph.append('span')
+                    .text(', ')
+                const paddingSize = layerDiv.select('.poolPadding').property('value')
+                const dropdownPadding = PytorchInitParagraph.append('select')
+                    .attr('class', 'poolPaddingCode')
+                dropdownPadding.selectAll('option').data(paddings)
+                    .enter().append('option')
+                    .attr('value', d => d)
+                    .html(d => d)
+                    .property("selected", function(d){ return d === paddingSize; })
+                PytorchInitParagraph.append('span')
+                    .text(')')
+                
+                //forward
+                PytorchForwardParagraph.append('span')
+                    .html('&emsp;&emsp;x = self.pool' + numPool + '(x)')
+                numPool += 1;
+            } else if(layerName == layerNames[3]){
+                const outputSize = layerDiv.select('div').property('id') * layerDiv.select('div').property('id')
+                PytorchInitParagraph.append('span')
+                    .html('&emsp;&emsp;self.fc = ' + ' = nn.Linear(' + outputSize + ', 10)')
+                    //channel size is always 1
+                
+                //forward
+                PytorchForwardParagraph.append('span')
+                    .html('&emsp;&emsp;x = x.view(-1, ' + outputSize + ')')
+                PytorchForwardParagraph.append('p')
+                    .html('&emsp;&emsp;x = self.fc(x)')
             }
 
         })
-        codeSpace.append('text').text('net = Net()')
     } else if(currLib == 'tensorflow'){
 
     } else if(currLib == 'keras'){
@@ -760,3 +937,186 @@ mlStepBtns.on('click',function () {
     document.getElementById(d3.select(this).property('id').concat('Area')).style.display = "block";
     d3.select(this).attr('class', 'MLstep active')
 })
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*********** MACHINE LEARNING USING TENSORFLOW.JS ***********/
+
+  async function run() {  
+      const data = new MnistData();
+      await data.load();
+    //   await showExamples(data);
+  
+      const model = getModel();
+      tfvis.show.modelSummary({name: 'Model Architecture'}, model);
+      
+      await train(model, data);
+  
+      await showAccuracy(model, data);
+      await showConfusion(model, data);
+  }  
+  
+  // Model
+function getModel() {
+    const model = tf.sequential();
+    
+    const IMAGE_WIDTH = 28;
+    const IMAGE_HEIGHT = 28;
+    const IMAGE_CHANNELS = 1;  
+    
+    const myLayers = d3.select('.addGroup').selectAll('.newLayer')
+    myLayers.each(function(d, i ,nodes){
+        const layerDiv = d3.select(this)
+        const layerName = layerDiv.select('.layerTitleBtn').node().innerText;
+        console.log('layerName: ' + layerName);
+        const inputSize = Number(layerDiv.select('.input').node().innerText.replace('Input: ', ''))
+        const outputSize = Number(layerDiv.select('.outputTextField').node().innerText)
+        if(layerName == layerNames[0]){
+            let myPadding;
+            if(layerDiv.select('.convPadding').property('value') > 0){
+                myPadding = 'same';
+            }
+            else{
+                myPadding = 'valid';
+            }
+            if(i === 0){
+                model.add(tf.layers.conv2d({
+                    inputShape: [IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_CHANNELS],
+                    kernelSize: Number(layerDiv.select('.convFilter').property('value')),
+                    filters: 1,
+                    strides: Number(layerDiv.select('.convStride').property('value')),
+                    padding: myPadding
+                    }));
+            } else{
+                model.add(tf.layers.conv2d({
+                    kernelSize: Number(layerDiv.select('.convFilter').property('value')),
+                    filters: 1,
+                    strides: Number(layerDiv.select('.convStride').property('value')),
+                    padding: myPadding
+                    }));
+            }
+        } else if(layerName == layerNames[1]){
+            const myActivation = layerDiv.select('.activationLayer').property('value')
+            model.add(tf.layers.activation({activation: myActivation}))
+        } else if(layerName == layerNames[2]){
+            let myPadding;
+            if(layerDiv.select('.poolPadding').property('value') > 0){
+                myPadding = 'same';
+            }
+            else{
+                myPadding = 'valid';
+            }
+            if(i === 0){
+                model.add(tf.layers.maxPooling2d({
+                    poolSize: Number(layerDiv.select('.poolFilter').property('value')), 
+                    inputShape: [IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_CHANNELS],
+                    padding: myPadding
+                }));
+            } else{
+                model.add(tf.layers.maxPooling2d({
+                    poolSize: Number(layerDiv.select('.poolFilter').property('value')), 
+                    padding: myPadding
+                }));
+            }
+        } else if(layerName == layerNames[3]){
+            model.add(tf.layers.flatten());
+            model.add(tf.layers.dense({
+                units: NUM_CLASSES
+            }));
+        }
+    })
+
+    // Choose an optimizer, loss function and accuracy metric,
+    // then compile and return the model
+    const optimizer = tf.train.momentum(Number(d3.select('#learningRate').property('value')),
+        Number(d3.select('#momentum').property('value')));
+    model.compile({
+        optimizer: optimizer,
+        loss: 'categoricalCrossentropy',
+        metrics: ['accuracy'],
+    });
+    
+    return model;
+    }
+
+    // Training
+    async function train(model, data) {
+    const metrics = ['loss', 'val_loss', 'acc', 'val_acc'];
+    const container = {
+        name: 'Model Training', styles: { height: '1000px' }
+    };
+    const fitCallbacks = tfvis.show.fitCallbacks(container, metrics);
+    
+    let BATCH_SIZE = Number(d3.select('#batchSize').property('value'));
+    console.log('batch size: ', BATCH_SIZE);
+    let TRAIN_DATA_SIZE = NUM_TRAIN_ELEMENTS / NUM_CLASSES; // numtraindata / numclasses
+    let TEST_DATA_SIZE = NUM_TEST_ELEMENTS / NUM_CLASSES;  // numtestdata / numclasses
+    
+    const [trainXs, trainYs] = tf.tidy(() => {
+        const d = data.nextTrainBatch(TRAIN_DATA_SIZE);
+        return [
+        d.xs.reshape([TRAIN_DATA_SIZE, 28, 28, 1]),
+        d.labels
+        ];
+    });
+    
+    const [testXs, testYs] = tf.tidy(() => {
+        const d = data.nextTestBatch(TEST_DATA_SIZE);
+        return [
+        d.xs.reshape([TEST_DATA_SIZE, 28, 28, 1]),
+        d.labels
+        ];
+    });
+    
+    return model.fit(trainXs, trainYs, {
+        batchSize: BATCH_SIZE,
+        validationData: [testXs, testYs],
+        epochs: 10,
+        shuffle: true,
+        callbacks: fitCallbacks
+    });
+    }
+  
+    const classNames = ['Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+  
+  function doPrediction(model, data, testDataSize = 500) {
+    const IMAGE_WIDTH = 28;
+    const IMAGE_HEIGHT = 28;
+    const testData = data.nextTestBatch(testDataSize);
+    const testxs = testData.xs.reshape([testDataSize, IMAGE_WIDTH, IMAGE_HEIGHT, 1]);
+    const labels = testData.labels.argMax(-1);
+    const preds = model.predict(testxs).argMax(-1);
+  
+    testxs.dispose();
+    return [preds, labels];
+  }
+  
+  
+  async function showAccuracy(model, data) {
+    const [preds, labels] = doPrediction(model, data);
+    const classAccuracy = await tfvis.metrics.perClassAccuracy(labels, preds);
+    const container = {name: 'Accuracy', tab: 'Evaluation'};
+    tfvis.show.perClassAccuracy(container, classAccuracy, classNames);
+  
+    labels.dispose();
+  }
+  
+  async function showConfusion(model, data) {
+    const [preds, labels] = doPrediction(model, data);
+    const confusionMatrix = await tfvis.metrics.confusionMatrix(labels, preds);
+    const container = {name: 'Confusion Matrix', tab: 'Evaluation'};
+    tfvis.render.confusionMatrix(
+        container, {values: confusionMatrix}, classNames);
+  
+    labels.dispose();
+  }
