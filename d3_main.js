@@ -150,7 +150,7 @@ class MnistData {
 
 
 /*********** VISUALIZATION ************/
-
+let exampleTexts = ['Example', 'my Model']
 let modelLayers = [];
 let layerNames = ['Conv', 'Acti','Pool', 'Linear'];
 const activationLayers = ['ReLU', 'Tanh', 'Sigmoid'];
@@ -164,7 +164,7 @@ const poolSizes = [2, 3, 4];
 let numLayer = 0;
 let numAddBtn = 1;
 let addBtns = [0];
-let stopRequested = false;
+let stopLearning = false, pauseLearning = false;
 let epochCurr = 0;
 
 function channelCheck(prevLayerDiv){
@@ -229,21 +229,33 @@ const playClick = async function () {
         this.innerHTML = '<i class="fas fa-pause-circle fa-3x"></i>';
         d3.select('.modelSpace').selectAll('button').property('disabled', true)
         d3.select('.modelSpace').selectAll('select').property('disabled', true)
+        d3.select('.betweenSpaces').selectAll('select').property('disabled', true)
         d3.select('.codeSpace').selectAll('select').property('disabled', true)
+        stopLearning = false;
+        pauseLearning = false;
+        old_history = history;
+        history = [];
         run();
     }
     else if(this.innerHTML == '<i class="fas fa-pause-circle fa-3x"></i>'){  //pause
         this.innerHTML = '<i class="fas fa-play-circle fa-3x"></i>';
         d3.select('.modelSpace').selectAll('button').property('disabled', true)
         d3.select('.modelSpace').selectAll('select').property('disabled', true)
+        d3.select('.betweenSpaces').selectAll('select').property('disabled', true)
         d3.select('.codeSpace').selectAll('select').property('disabled', true)
+        stopLearning = false;
+        pauseLearning = true;
         //pause learning
     }
     else{   //stop
+        this.previousElementSibling.innerHTML = '<i class="fas fa-play-circle fa-3x"></i>';
         //stop learning
         d3.select('.modelSpace').selectAll('button').property('disabled', false)
         d3.select('.modelSpace').selectAll('select').property('disabled', false)
+        d3.select('.betweenSpaces').selectAll('select').property('disabled', false)
         d3.select('.codeSpace').selectAll('select').property('disabled', false)
+        stopLearning = true;
+        pauseLearning = false;
         epochCurr = 0;
         d3.select('#epochCurr').text(epochCurr)
         old_history = JSON.parse(JSON.stringify(history));
@@ -251,7 +263,22 @@ const playClick = async function () {
 }
 const btnTopSvg = d3.selectAll('.btnTop')
 const btnLearnFunc = btnTopSvg.selectAll('.btnLearning').on('click', playClick);
+const btnExample = btnTopSvg.select('#Example').on('click', function(){
+    const state = this.innerText;
+    if(state == exampleTexts[0]){
+        this.innerText = exampleTexts[1];
+        d3.select('.addGroup').style('visibility', 'hidden')
+        d3.select('.exampleGroup').style('visibility', 'visible')
+    } else{
+        this.innerText = exampleTexts[0];
+        d3.select('.addGroup').style('visibility', 'visible')
+        d3.select('.exampleGroup').style('visibility', 'hidden')
+    }
+})
 
+const btnSavePy = btnTopSvg.select('#savePy').on('click', function(){
+
+})
 const dataSpace = d3.select('.modelSpace').select('.data')
 const modelSpace = d3.select('.modelSpace').select('.model')
 const resultSpace = d3.select('.modelSpace').select('.result')
@@ -262,13 +289,7 @@ const dataRect = dataSpace.append('rect')
     .attr('fill', 'white')
     .style('stroke', d3.rgb(192, 192, 192))
     .style('stroke-width', '2px')
-const batchSelect = d3.select('#batchSize').on('change', function(){
-        // BATCH_SIZE = d3.select(this).property('value')
-    })
-const dataSelect = d3.select('#trainData').on('change', function(){
-    NUM_TRAIN_ELEMENTS = d3.select(this).property('value')
-    NUM_TEST_ELEMENTS = NUM_DATASET_ELEMENTS - NUM_TRAIN_ELEMENTS;
-})
+    
 const dataText = dataSpace.append('text')
     .text('Data')
     .attr('x', 30)
@@ -297,10 +318,26 @@ const trainSizeDD = d3.select('#trainData')
     .on('change', function(d){
         let selectedOption = d3.select(this).property('value')
         testSizeDD
-            .text('Test data:    ' + (65000 - selectedOption))
+            .text('Test data: ' + (65000 - selectedOption))
+            
+        console.log('data changed')
+        NUM_TRAIN_ELEMENTS = Number(d3.select(this).property('value'))
+        NUM_TEST_ELEMENTS = NUM_DATASET_ELEMENTS - NUM_TRAIN_ELEMENTS;
 })
 
 let currLib = 'Pytorch'
+
+const changeChannel = function(){
+    const channelVal = d3.select(this).property('value')
+    let layerDiv = this.parentNode.parentNode.parentNode;
+    while((layerDiv = layerDiv.nextElementSibling) != null){
+        if(layerDiv.classList.contains('newLayer') && 
+            d3.select(layerDiv).select('div > .layerTitleBtn').node().innerText == layerNames[0]){
+                d3.select(layerDiv).select('div > .chanIn').text('Ch in: ' + channelVal)
+                return;
+            }
+    }
+}
 const changeNextInputSize = function(grandParent){
     if(grandParent === null)    return;
     let prevGP = grandParent.previousElementSibling;
@@ -358,12 +395,12 @@ const changeNextInputSize = function(grandParent){
 
             layerDiv.select('.outputTextField').text(outputSize)
         } else if(layerCategory == layerNames[1]){
-            layerDiv.select('.outputTextField').text(outputSize)
+            layerDiv.select('.outputTextField').text(inputSize)
         } else if(layerCategory == layerNames[2]){
             let f = layerDiv.select('.poolFilter').property('value')
             let p = layerDiv.select('.poolPadding').property('value')
             let s = f
-            const outputSize = Math.round((inputSize + 2 * p - f) / s) + 1
+            outputSize = Math.round((inputSize + 2 * p - f) / s) + 1
 
             layerDiv.select('svg').select('.padSquare')
                 .transition()
@@ -458,7 +495,7 @@ const makeLayer = function (layerDiv, prevSibling, value) {
                 .attr('width', outputSize * EXPANDSVG)
                 .attr('height', outputSize * EXPANDSVG)
             const grandParent = this.parentNode.parentNode
-            changeNextInputSize(grandParent)
+            changeNextInputSize(grandParent.nextElementSibling)
         })
         const labelStride = layerDiv.append('label')
             .text('Stride: ')
@@ -486,7 +523,7 @@ const makeLayer = function (layerDiv, prevSibling, value) {
                 .attr('width', (outputSize + 2 * p) * EXPANDSVG)
                 .attr('height', (outputSize + 2 * p) * EXPANDSVG)
             const grandParent = this.parentNode.parentNode
-            changeNextInputSize(grandParent)
+            changeNextInputSize(grandParent.nextElementSibling)
         })
         const labelPadding = layerDiv.append('label')
             .text('Padding: ')
@@ -522,7 +559,7 @@ const makeLayer = function (layerDiv, prevSibling, value) {
                 .attr('y', p * EXPANDSVG)
             
             const grandParent = this.parentNode.parentNode;
-            changeNextInputSize(grandParent);
+            changeNextInputSize(grandParent.nextElementSibling);
         })
         let chanIn = channelCheck(layerDiv.node().parentNode.previousElementSibling); //channel only changes by conv
         const labelChanIn = layerDiv.append('label')
@@ -539,6 +576,7 @@ const makeLayer = function (layerDiv, prevSibling, value) {
             .enter().append('option')
             .attr('value', d => d)
             .html(d => d)
+        dropdownChannel.on('change', changeChannel)
         let f = dropdownFilter.property('value')
         let p = dropdownPadding.property('value')
         let s = dropdownStride.property('value')
@@ -765,7 +803,6 @@ const addLayerFunc = function () {
         })
     }
     let selected = d3.select(this).property('value')
-    console.log('selected: ' +selected)
     newDiv.append('button')
         .html(addBtnHtml)
         .attr('class', 'addBtn')
@@ -804,14 +841,11 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
 
     d3.selectAll('.library').style('border', 'none')
     d3.select(this).style('border-top', '2px solid red')
-    // console.log('#'.concat(d3.selectAll('.MLstep.active').property('id'), 'Area'))
-    // d3.selectAll('#'.concat(currId)).remove()
     currLib = d3.select(this).property('value')
     const codeAreaId = d3.select('.MLstep.active').property('id') + 'Area'
     console.log('codeAreaId: ' + codeAreaId)
     const codeSpace = d3.select('#'.concat(codeAreaId)).select('.' + currLib + 'Area')
-        // .attr('class', currLib + 'Area')
-        // .attr('id', currId)
+    
     if(currLib == 'Pytorch'){
         const PytorchInit = codeSpace.select('#__init__')
         const PytorchForward = codeSpace.select('#forward')
@@ -839,7 +873,7 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
                     .enter().append('option')
                     .attr('value', d => d)
                     .html(d => d)
-                    .property("selected", function(d){ return d === channelSize; })
+                    .property("selected", function(d){ return d == channelSize; })
                 PytorchInitParagraph.append('span')
                     .text(', ')
 
@@ -851,7 +885,7 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
                     .enter().append('option')
                     .attr('value', d => d)
                     .html(d => d)
-                    .property("selected", function(d){ return d === filterSize; })
+                    .property("selected", function(d){ return d == filterSize; })
                 
                 PytorchInitParagraph.append('span')
                     .text(', ')
@@ -862,7 +896,7 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
                     .enter().append('option')
                     .attr('value', d => d)
                     .html(d => d)
-                    .property("selected", function(d){ return d === strideSize; })
+                    .property("selected", function(d){ return d == strideSize; })
                 PytorchInitParagraph.append('span')
                     .text(', ')
                 const paddingSize = layerDiv.select('.convPadding').property('value')
@@ -872,7 +906,7 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
                     .enter().append('option')
                     .attr('value', d => d)
                     .html(d => d)
-                    .property("selected", function(d){ return d === paddingSize; })
+                    .property("selected", function(d){ return d == paddingSize; })
                 PytorchInitParagraph.append('span')
                     .text(')')
                 //forward
@@ -890,7 +924,7 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
                         .enter().append('option')
                         .attr('value', d => d)
                         .html(d => d)
-                        .property("selected", function(d){ return d === activation; })
+                        .property("selected", function(d){ return d == activation; })
                     PytorchInitParagraph.append('span')
                         .text('()')
                     //forward
@@ -983,13 +1017,15 @@ mlStepBtns.on('click',function () {
 
 
 
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+ }
 
 
 
 
 
 /*********** MACHINE LEARNING USING TENSORFLOW.JS ***********/
-
 async function run() {  
     const data = new MnistData();
     await data.load();
@@ -1008,8 +1044,8 @@ async function run() {
 //   await showAccuracy(model, data);
 }  
   
-const history = [];
-const old_history = [];
+let history = [];
+let old_history = [];
   // Model
 function getModel() {
     const model = tf.sequential();
@@ -1018,7 +1054,12 @@ function getModel() {
     const IMAGE_HEIGHT = 28;
     const IMAGE_CHANNELS = 1;  
     
-    const myLayers = d3.select('.addGroup').selectAll('.newLayer')
+    let myLayers;
+    if(d3.select('#Example').node().innerText == exampleTexts[0]){
+        myLayers = d3.select('.addGroup').selectAll('.newLayer')
+    } else{
+        myLayers = d3.select('.exampleGroup').selectAll('.newLayer')
+    }
     myLayers.each(function(d, i ,nodes){
         const layerDiv = d3.select(this)
         const layerName = layerDiv.select('.layerTitleBtn').node().innerText;
@@ -1037,20 +1078,21 @@ function getModel() {
                 model.add(tf.layers.conv2d({
                     inputShape: [IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_CHANNELS],
                     kernelSize: Number(layerDiv.select('.convFilter').property('value')),
-                    filters: 1,
+                    filters: Number(layerDiv.select('.chanOut > .convChannel').property('value')),
                     strides: Number(layerDiv.select('.convStride').property('value')),
                     padding: myPadding
                     }));
             } else{
                 model.add(tf.layers.conv2d({
                     kernelSize: Number(layerDiv.select('.convFilter').property('value')),
-                    filters: 1,
+                    filters: Number(layerDiv.select('.chanOut > .convChannel').property('value')),
                     strides: Number(layerDiv.select('.convStride').property('value')),
                     padding: myPadding
                     }));
             }
         } else if(layerName == layerNames[1]){
-            const myActivation = layerDiv.select('.activationLayer').property('value')
+            const myActivation = layerDiv.select('.activationLayer').property('value').toLowerCase()
+            console.log('myActivation: ', myActivation)
             model.add(tf.layers.activation({activation: myActivation}))
         } else if(layerName == layerNames[2]){
             let myPadding;
@@ -1095,17 +1137,16 @@ function getModel() {
 
     // Training
     async function train(model, data) {
-    const metrics = ['acc', 'val_acc'];
+    const metrics = ['acc'];
     const container = {
         name: 'Train Result'
     };
-    // const fitCallbacks = tfvis.show.fitCallbacks(container, metrics);
     
     let BATCH_SIZE = Number(d3.select('#batchSize').property('value'));
     console.log('batch size: ', BATCH_SIZE);
     let TRAIN_DATA_SIZE = NUM_TRAIN_ELEMENTS / NUM_CLASSES; // numtraindata / numclasses
     let TEST_DATA_SIZE = NUM_TEST_ELEMENTS / NUM_CLASSES;  // numtestdata / numclasses
-    
+    console.log('train data size: ' + TRAIN_DATA_SIZE + ', test data size: ' + TEST_DATA_SIZE)
     const [trainXs, trainYs] = tf.tidy(() => {
         const d = data.nextTrainBatch(TRAIN_DATA_SIZE);
         return [
@@ -1121,19 +1162,28 @@ function getModel() {
         d.labels
         ];
     });
-    return model.fit(trainXs, trainYs, {
-        batchSize: BATCH_SIZE,
-        validationData: [testXs, testYs],
-        epochs: 10,
-        shuffle: true,
-        callbacks: {
-            onEpochEnd: (epoch, log) => {
-                history.push(log);
-                tfvis.show.history(container, history, ['acc']);
-                d3.select('#epochCurr').text(++epochCurr)
+        return model.fit(trainXs, trainYs, {
+            batchSize: BATCH_SIZE,
+            validationData: [testXs, testYs],
+            epochs: 10,
+            shuffle: true,
+            callbacks: {
+                onEpochEnd: async (epoch, log) => {
+                    history.push(log);
+                    tfvis.show.history(container, history, metrics);
+                    if(stopLearning){
+                        this.stopTraining = true;
+                    }
+                    while(pauseLearning){
+                        await sleep(100);
+                    }
+                    d3.select('#epochCurr')
+                        .transition()
+                        .duration(Duration)
+                        .text(++epochCurr)
+                }
             }
-        }
-    });
+        });
     }
   
     const classNames = ['Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
@@ -1149,5 +1199,12 @@ function getModel() {
     testxs.dispose();
     return [preds, labels];
   }
+  async function showAccuracy(model, data) {
+    const [preds, labels] = doPrediction(model, data);
+    const classAccuracy = await tfvis.metrics.perClassAccuracy(labels, preds);
+    const container = {name: 'Accuracy', tab: 'Evaluation'};
+    tfvis.show.perClassAccuracy(container, classAccuracy, classNames);
   
+    labels.dispose();
+  }
   

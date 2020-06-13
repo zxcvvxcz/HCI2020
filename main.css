@@ -127,7 +127,6 @@
     width: 90px;
     display: block;
 }
-
 .addLayerDiv{
     width:100px;
 }
@@ -135,8 +134,16 @@
     display:inline-block;
 }
 
+.newLayer{
+    border : none;
+}
+
 .addLayerBtn:not(:last-child){
     border-bottom : none;
+}
+
+label{
+    clear:left;
 }
 /* tfjs-visor */
 .tfjs-visor-container{
@@ -156,6 +163,7 @@
 .visor-surfaces{
     width: 100%;
 }
+/**/
 .MLstep, .library{
     border: none;
     outline: none;

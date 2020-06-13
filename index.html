@@ -1,220 +1,370 @@
 <!DOCTYPE html>
-<html lang = "en">
-    <head>
-        <meta charset = "utf-8"/>
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">    
-        <title>CNN helper</title>
-        <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.0.0/dist/tf.min.js"></script>
-        <!-- For TypeScript, skipLibCheck: true in your tsconfig.json-->
-        <!-- Import tfjs-vis -->
-        <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis@1.0.2/dist/tfjs-vis.umd.min.js"></script>
+<html lang="en">
 
-        <!-- Import the data file -->
-        <!-- <script src="data.js" type="module"></script> -->
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CNN helper</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.0.0/dist/tf.min.js"></script>
+    <!-- For TypeScript, skipLibCheck: true in your tsconfig.json-->
+    <!-- Import tfjs-vis -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis@1.0.2/dist/tfjs-vis.umd.min.js"></script>
 
-        <!-- Import the main script file -->
-        <!-- <script src="script.js" type="module"></script> -->
-        
-        <!-- Import font awesome 5 for icons -->
-        <link rel="stylesheet" 
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.8.2/css/all.min.css"/>
-        <link rel="stylesheet" type='text/css' href="./main.css" />
-    </head>
-    
-    <body>
-        <!-- <svg class = "btn_learn" width = "1000" height = "1000"></svg> -->
-        <div class = "btnTop">
-            <button class = 'btnLearning' id ='play'><i class="fas fa-play-circle fa-3x"></i></button>
-            <button class = 'btnLearning' id ='stop'><i class="fas fa-stop-circle fa-3x"></i></button>
-            <span id = 'epoch'>Epoch : <span id = 'epochCurr'>0</span></span>
-            <button class = 'btnSaveLoad' id ='savePy'>Save .py</button>
-            <button class = 'btnSaveLoad' id ='Example'>Example</button>
-        </div>
-        <div class = "modelSpace">
-            <div class = "dataSpace"><svg class = "data"></svg>
+    <!-- Import the data file -->
+    <!-- <script src="data.js" type="module"></script> -->
+
+    <!-- Import the main script file -->
+    <!-- <script src="script.js" type="module"></script> -->
+
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="d3_main.js" type='module'></script>
+    <!-- Import font awesome 5 for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.8.2/css/all.min.css" />
+    <link rel="stylesheet" type='text/css' href="./main.css" />
+</head>
+
+<body>
+    <div class="btnTop">
+        <button class='btnLearning' id='play'><i class="fas fa-play-circle fa-3x"></i></button>
+        <button class='btnLearning' id='stop'><i class="fas fa-stop-circle fa-3x"></i></button>
+        <span id='epoch'>Epoch : <span id='epochCurr'>0</span></span>
+        <button class='btnSaveLoad' id='savePy'>Save .py</button>
+        <button class='btnSaveLoad' id='Example'>Example</button>
+    </div>
+    <div class="modelSpace">
+        <div class="dataSpace"><svg class="data"></svg>
+            <br>
+            <form class='dataForm'>
                 <br>
-                <form class = 'dataForm'>
-                    <br>
-                    <label for='batchSize'> batch size<br/>:</label>
-                    <select id = 'batchSize'>
-                        <option value="128">128</option>
-                        <option value="256">256</option>
-                        <option value="512">512</option>
-                        <option value="1024">1024</option>
-                    </select><br/>
-                    <br>
-                    <label for='trainData'> Training data<br/>:</label>
-                    <select id="trainData">
-                        <option value=60000>60000</option>
-                        <option value=55000>55000</option>
-                        <option value=45000>45000</option>
-                    </select>
-                    <br>
-                    <br>
-                    <!-- <label for='trainData'> Training data<br/>:</label> -->
-                </form>
+                <label for='batchSize'> batch size<br />:</label>
+                <select id='batchSize'>
+                    <option value="128">128</option>
+                    <option value="256">256</option>
+                    <option value="512">512</option>
+                    <option value="1024">1024</option>
+                </select><br />
+                <br>
+                <label for='trainData'> Training data<br />:</label>
+                <select id="trainData">
+                    <option value=60000>60000</option>
+                    <option value=55000>55000</option>
+                    <option value=45000>45000</option>
+                </select>
+                <br>
+                <br>
+                <!-- <label for='trainData'> Training data<br/>:</label> -->
+            </form>
+        </div>
+        <div class='visSpace'>
+            <div class='addGroup'>
+                <div class='addLayerDiv'>
+                    <button class='addBtn' id='addBtn0' value='0'>
+                        <i class='fas fa-plus-circle fa'></i>
+                    </button>
+                </div>
             </div>
-            <div class = 'visSpace'>
-                <div class = 'addGroup'>
-                    <div class = 'addLayerDiv'>
-                        <button class = 'addBtn' id = 'addBtn0' value = '0'>
-                            <i class = 'fas fa-plus-circle fa'></i>
-                        </button>
+            <div class="exampleGroup" style='visibility: hidden;'>
+                <div class="addLayerDiv" style="border: none;">
+                    <!-- <button class="addBtn" id="addBtn0" value="0" >
+                        <i class="fas fa-plus-circle fa"></i>
+                    </button> -->
+                </div>
+                <div class="addLayerDiv newLayer" style="border: none;">
+                    <div class="layerVis Conv" id="28">
+                        <!-- <button class="closeBtn" >
+                                            <i class="fas fa-window-close fa"></i>
+                                        </button> -->
+                        <button class="layerTitleBtn" style="float: left;" >Conv</button>
+                        <svg width="90" height="90">
+                            <rect x="0" y="0" width="84" height="84" class="entireSquare"></rect>
+                            <rect x="0" y="0" width="84" height="84" class="inputSquare"></rect>
+                            <rect x="0" y="0" width="90" height="90" class="padSquare"></rect>
+                            <rect x="3" y="3" width="84" height="84" class="outputSquare"></rect>
+                            <rect x="3" y="3" width="9" height="9" class="filterSquare"></rect>
+                        </svg><label class="input" style="float: left;">Input: 28</label>
+                        <label class="filter" style="float: left;">Filter: </label>
+                        <select class="convFilter" >
+                            <option value="3" selected>3*3</option>
+                            <option value="5">5*5</option>
+                        </select>
+                        <label class="stride" style="float: left;">Stride: </label>
+                        <select class="convStride" >
+                            <option value="1" selected>1</option>
+                            <option value="2">2</option>
+                        </select>
+                        <label class="pad" style="float: left;">Padding: </label>
+                        <select class="convPadding" >
+                            <option value="0">0</option>
+                            <option value="1" selected>1</option>
+                        </select>
+                        <label class="chanIn" style="float: left;">Ch in: 1</label>
+                        <label class="chanOut" style="float: left;">Ch out:
+                            <select class="convChannel" >
+                                <option value="4">4</option>
+                                <option value="6">6</option>
+                                <option value="8" selected>8</option>
+                                <option value="16">16</option>
+                                <option value="32">32</option>
+                                <option value="64">64</option>
+                                <option value="128">128</option>
+                            </select>
+                        </label>
+                        <label style="float: left;">Output: </label>
+                        <text class="outputTextField">28</text>
                     </div>
+                    <!-- <button class="addBtn" id="addBtn2" value="2" >
+                                        <i class="fas fa-plus-circle fa"></i>
+                                    </button> -->
+                </div>
+                <div class="addLayerDiv newLayer" style="border: none;">
+                    <div class="layerVis Acti" id="28">
+                        <!-- <button class="closeBtn" >
+                                <i class="fas fa-window-close fa"></i>
+                            </button> -->
+                        <button class="layerTitleBtn" style="float: left;" >Acti</button>
+                        <img width="90" height="90" src="/images/ReLU.png">
+                        <label class="input" style="float: left;">Input: 28</label>
+                        <label style="float: left;">Activation: </label>
+                        <select class="activationLayer" >
+                            <option value="ReLU" selected>ReLU</option>
+                            <option value="Tanh">Tanh</option>
+                            <option value="Sigmoid">Sigmoid</option>
+                        </select>
+                        <label style="float: left;">Output: </label>
+                        <text class="outputTextField">28</text>
+                    </div>
+                    <!-- <button class="addBtn" id="addBtn3" value="3" >
+                            <i class="fas fa-plus-circle fa"></i>
+                        </button> -->
+                </div>
+                <div class="addLayerDiv newLayer" style="border: none;">
+                    <div class="layerVis Pool" id="28">
+                        <!-- <button class="closeBtn" >
+                                <i class="fas fa-window-close fa"></i>
+                            </button> -->
+                        <button class="layerTitleBtn" style="float: left;" >Pool</button>
+                        <svg width="90" height="90">
+                            <rect x="0" y="0" width="84" height="84" class="entireSquare"></rect>
+                            <rect x="0" y="0" width="78" height="78" class="inputSquare"></rect>
+                            <rect x="0" y="0" width="42" height="42" class="padSquare"></rect>
+                            <rect x="0" y="0" width="42" height="42" class="outputSquare"></rect>
+                            <rect x="0" y="0" width="6" height="6" class="filterSquare"></rect>
+                        </svg>
+                        <label class="input" style="float: left;">Input: 28</label>
+                        <label style="float: left;">Filter: </label>
+                        <select class="poolFilter" >
+                            <option value="2" selected>2*2</option>
+                            <option value="3">3*3</option>
+                            <option value="4">4*4</option>
+                        </select>
+                        <label style="float: left; clear: right;">Stride: 2</label>
+                        <label style="float: left;">Padding: </label>
+                        <select class="poolPadding" style="float: left;" >
+                            <option value="0" selected>0</option>
+                            <option value="1">1</option>
+                        </select>
+                        <label style="float: left;">Output: </label>
+                        <text class="outputTextField">14</text>
+                    </div>
+                    <!-- <button class="addBtn" id="addBtn4" value="4" >
+                            <i class="fas fa-plus-circle fa"></i>
+                        </button> -->
+                </div>
+                <div class="addLayerDiv newLayer" style="border: none;">
+                    <div class="layerVis Linear" id="14">
+                        <!-- <button class="closeBtn" >
+                                <i class="fas fa-window-close fa"></i>
+                            </button> -->
+                        <button class="layerTitleBtn" style="float: left;" >Linear</button>
+                        <img width="90" height="90" src="/images/linear.png">
+                        <label class="input">Input: 14</label>
+                        <label style="float: left;">Output: </label>
+                        <text class="outputTextField">10</text>
+                    </div>
+                    <!-- <button class="addBtn" id="addBtn5" value="5" >
+                        <i class="fas fa-plus-circle fa"></i>
+                    </button> -->
+                </div>
+                <div class="addLayerDiv newLayer" style="border: none;">
+                    <div class="layerVis Acti" id="10">
+                        <!-- <button class="closeBtn" >
+                                <i class="fas fa-window-close fa"></i>
+                            </button> -->
+                        <button class="layerTitleBtn" style="float: left;" >Acti</button>
+                        <img width="90" height="90" src="/images/Sigmoid.png">
+                        <label class="input" style="float: left;">Input: 10</label>
+                        <label style="float: left;">Activation: </label>
+                        <select class="activationLayer" >
+                            <option value="ReLU">ReLU</option>
+                            <option value="Tanh">Tanh</option>
+                            <option value="Sigmoid" selected>Sigmoid</option>
+                        </select>
+                        <label style="float: left;">Output: </label>
+                        <text class="outputTextField">10</text>
+                    </div>
+                    <!-- <button class="addBtn" id="addBtn6" value="6" >
+                            <i class="fas fa-plus-circle fa"></i>
+                        </button> -->
                 </div>
             </div>
-            <div class = 'resultSpace' id = 'resultSpace'></div>
-            <!-- <svg class = 'model'></svg>
+
+
+        </div>
+        <div class='resultSpace' id='resultSpace'></div>
+        <!-- <svg class = 'model'></svg>
             <svg class = 'result'></svg> -->
-        </div>
-        <div class = 'betweenSpaces'>
-            <label for ="learningRate" >Learning rate : </label>
-            <select id="learningRate">
-                <option value="0.001">0.001</option>
-                <option value="0.002">0.002</option>
-                <option value="0.003">0.003</option>
-                <option value="0.005">0.005</option>
-                <option value="0.01">0.01</option>
-                <option value="0.02">0.02</option>
-                <option value="0.03">0.03</option>
-                <option value="0.04">0.04</option>
-                <option value="0.05">0.05</option>
-                <option value="0.1">0.1</option>
-            </select>
-            <label for="momentum">momentum : </label>
-            <select id="momentum">
-                <option value="0.9">0.9</option>
-                <option value="0.8">0.8</option>
-            </select>
-            <i class="fas fa-arrows-alt-v fa-3x" style = 'font-size: 50px; text-align: center; display: block;'></i>
-            <button class = 'library active' id = 'Pytorch' value = 'Pytorch'>Pytorch</button>
-            <button class = 'library' id = 'tensorflow' value = 'tensorflow'>tensorflow</button>
-            <button class = 'library' id = 'keras' value = 'keras'>keras</button>
-            <button class = 'MLstep' id = 'resultCode' value = 'result'>Result</button>
-            <button class = 'MLstep active' id = 'modelCode' value = 'model'>Model</button>
-            <button class = 'MLstep' id = 'preprocessCode' value = 'preprocess'>Preprocess</button>
-        </div>
-        
-        <div class = 'codeSpace'>
-            <div class = 'codeArea' id = 'preprocessCodeArea'></div>
-                <div class = 'PytorchArea' id = 'preprocessPytorchArea' style = 'display:none'>
-                    %matplotlib inline<br><br>
+    </div>
+    <div class='betweenSpaces'>
+        <label for="learningRate">Learning rate : </label>
+        <select id="learningRate">
+            <option value="0.001">0.001</option>
+            <option value="0.002">0.002</option>
+            <option value="0.003">0.003</option>
+            <option value="0.005">0.005</option>
+            <option value="0.01">0.01</option>
+            <option value="0.02">0.02</option>
+            <option value="0.03">0.03</option>
+            <option value="0.04">0.04</option>
+            <option value="0.05">0.05</option>
+            <option value="0.1">0.1</option>
+        </select>
+        <label for="momentum">momentum : </label>
+        <select id="momentum">
+            <option value="0.9">0.9</option>
+            <option value="0.8">0.8</option>
+        </select>
+        <i class="fas fa-arrows-alt-v fa-3x" style='font-size: 50px; text-align: center; display: block;'></i>
+        <button class='library active' id='Pytorch' value='Pytorch'>Pytorch</button>
+        <button class='library' id='tensorflow' value='tensorflow'>tensorflow</button>
+        <button class='library' id='keras' value='keras'>keras</button>
+        <button class='MLstep' id='resultCode' value='result'>Result</button>
+        <button class='MLstep active' id='modelCode' value='model'>Model</button>
+        <button class='MLstep' id='preprocessCode' value='preprocess'>Preprocess</button>
+    </div>
 
-                    import itertools<br>
-                    from IPython.display import Image<br>
-                    from IPython import display<br>
-                    import matplotlib.pyplot as plt<br>
-                    import torch<br>
-                    import torch.optim as optim<br>
-                    import torchvision<br>
-                    
-                    from torchvision import datasets, transforms<br>
-                    import torchvision.transforms as transforms<br>
-
-                    <p>trn_dataset = datasets.MNIST('../mnist_data/',<br>
-                        &emsp;download=True,  <br>
-                        &emsp;train=True,  <br>
-                        &emsp;transform=transforms.Compose([  <br>
-                        &emsp;transforms.ToTensor(), # image to Tensor  <br>
-                        &emsp;transforms.Normalize((0.1307,), (0.3081,)) # image, label  ]))</p>
-
-                    <p>val_dataset = datasets.MNIST(&quot;../mnist_data/&quot;,   <br>
-                        &emsp;download=False,  <br>
-                        &emsp;train=False,  <br>
-                        &emsp;transform= transforms.Compose([  <br>
-                        &emsp;transforms.ToTensor(),  <br>
-                        &emsp;transforms.Normalize((0.1307, ),(0.3081, ))  ]))</p>
-                    <p>batch_size = <span class = 'batchSize'>128</span><br>
-                        trn_loader = torch.utils.data.DataLoader(trn_dataset,  batch_size=batch_size,  shuffle=True)<br>
-                        val_loader = torch.utils.data.DataLoader(val_dataset,  batch_size=batch_size,  shuffle=True)</p>
-                </div>
-                <div class = 'tensorflowArea' id = 'preprocesstensorflowArea' style = 'display:none'>
-                    <p>import tensorflow.compat.v1 as tf<br>
-                        tf.disable_v2_behavior()</p>
-
-                    <p># Download the mnist dataset using keras<br> 
+    <div class='codeSpace'>
+        <div class='codeArea' id='preprocessCodeArea'>
+            <div class='PytorchArea' id='preprocessPytorchArea' style='display:none'>
+                %matplotlib inline<br><br>
+    
+                import itertools<br>
+                from IPython.display import Image<br>
+                from IPython import display<br>
+                import matplotlib.pyplot as plt<br>
+                import torch<br>
+                import torch.optim as optim<br>
+                import torchvision<br>
+    
+                from torchvision import datasets, transforms<br>
+                import torchvision.transforms as transforms<br>
+    
+                <p>trn_dataset = datasets.MNIST('../mnist_data/',<br>
+                    &emsp;download=True, <br>
+                    &emsp;train=True, <br>
+                    &emsp;transform=transforms.Compose([ <br>
+                    &emsp;transforms.ToTensor(), # image to Tensor <br>
+                    &emsp;transforms.Normalize((0.1307,), (0.3081,)) # image, label ]))</p>
+    
+                <p>val_dataset = datasets.MNIST(&quot;../mnist_data/&quot;, <br>
+                    &emsp;download=False, <br>
+                    &emsp;train=False, <br>
+                    &emsp;transform= transforms.Compose([ <br>
+                    &emsp;transforms.ToTensor(), <br>
+                    &emsp;transforms.Normalize((0.1307, ),(0.3081, )) ]))</p>
+                <p>batch_size = <span class='batchSize'>128</span><br>
+                    trn_loader = torch.utils.data.DataLoader(trn_dataset, batch_size=batch_size, shuffle=True)<br>
+                    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=True)</p>
+            </div>
+            <div class='tensorflowArea' id='preprocesstensorflowArea' style='display:none'>
+                <p>import tensorflow.compat.v1 as tf<br>
+                    tf.disable_v2_behavior()</p>
+    
+                <p># Download the mnist dataset using keras<br>
                     data_train, data_test = tf.keras.datasets.mnist.load_data()</p>
-
-                    <p># Parse images and labels<br>
+    
+                <p># Parse images and labels<br>
                     (train_images, train_labels) = data_train<br>
                     (test_images, test_labels) = data_test</p>
-                    
-                    <p># Numpy reshape &amp; type casting<br>
+    
+                <p># Numpy reshape &amp; type casting<br>
                     train_images = train_images.reshape(train_images.shape[0], 28, 28, 1).astype('float32')<br>
                     test_images = test_images.reshape(test_images.shape[0], 28, 28, 1).astype('float32')<br>
                     train_labels = train_labels.astype('int64')<br>
                     test_labels = test_labels.astype('int64')</p>
-                    <p> # Normalizing the images to the range of [0., 1.]<br>
+                <p> # Normalizing the images to the range of [0., 1.]<br>
                     train_images /= 255.<br>
                     test_images /= 255.</p>
-                </div>
-                <div class = 'kerasArea' id = 'preprocesskerasArea' style = 'display:none'>
-                
-                </div>
-            <div class = 'codeArea' id = 'modelCodeArea'>
-                <div class = 'PytorchArea' id = 'modelPytorchArea'>
-                    <p>import torch.nn as nn</p>
-                    <p>class Net(nn.Module):</p>
-                    <p>&emsp;def __init__(self):</p>
-                    <p>&emsp;&emsp;super(Net, self).__init__()</p>
-                    <div id = '__init__'></div>
-                    <p>&emsp;def forward(self, x):</p>
-                    <div id = 'forward'></div>
-                    <p>&emsp;&emsp;return x</p>
-                    <p>net = Net()</p>
-                </div>
-                <div class = 'tensorflowArea' id = 'modeltensorflowArea' style = 'display:none'></div>
-                <div class = 'kerasArea' id = 'modelkerasArea' style = 'display:none'></div>
             </div>
-            <div class = 'codeArea' id = 'resultCodeArea'>
-                <div class = 'PytorchArea' id = 'resultPytorchArea' style = 'display:none'>
-                    <p># loss</p>
-                    <p>criterion = nn.CrossEntropyLoss()</p>
-                    <p># backpropagation method</p>
-                    <p>optimizer = optim.SGD(net.parameters(), lr=<span class='learningRate'>learning_rate</span>, momentum=0.9)</p>
-                    <p># hyper-parameters</p>
-                    <p>num_epochs = <span class = 'epoch'></span></p>
-                    <p>num_batches = len(trn_loader)</p>
-                </div>
-                <div class = 'tensorflowArea' id = 'resulttensorflowArea' style = 'display:none'>
-                    <p>with tf.Session(graph=graph) as sess: <br> 
-                        &emsp;sess.run(init)</p>
-
-                    <p>&emsp;for epoch in range(<span class = 'epoch'></span>): <br>
-                        &emsp;&emsp;sess.run(train_init) <br>
-                        &emsp;&emsp;total_loss = 0 <br>
-                        &emsp;&emsp;total_corrects = 0</p>
-
-                    <p> &emsp;&emsp;try: <br>
-                        &emsp;&emsp;&emsp;while True: <br>
-                        &emsp;&emsp;&emsp;&emsp;_, loss_val, corrects_val = sess.run([train_op, loss, num_correct_preds]) <br>
-                        &emsp;&emsp;&emsp;&emsp;total_loss += loss_val <br>
-                        &emsp;&emsp;&emsp;&emsp;total_corrects += corrects_val <br>
-                        &emsp;&emsp;except tf.errors.OutOfRangeError: <br>
-                        &emsp;&emsp;&emsp;pass</p>
-
-                    <p> &emsp;&emsp;print('Epoch: %02d' % (epoch + 1), 'Loss = {:2.4f}'.format(total_loss * batch_size / 60000), 'Train accuracy = {:2.4f}'.format(total_corrects / 60000))</p>
-
-                    <p> &emsp;sess.run(test_init) <br>
-                        &emsp;total_corrects = 0</p>
-
-                    <p> &emsp;try: <br>
-                        &emsp;&emsp;while True: <br>
-                        &emsp;&emsp;&emsp;corrects_val = sess.run(num_correct_preds) <br>
-                        &emsp;&emsp;&emsp;total_corrects += corrects_val <br>
-                        &emsp;except tf.errors.OutOfRangeError: <br>
-                        &emsp;pass</p>
-
-                    <p> &emsp;print('Test accuracy = {:2.4f}'.format(total_corrects / 10000))</p>
-                </div>
-                <div class = 'kerasArea' id = 'resultkerasArea' style = 'display:none'></div>
+            <div class='kerasArea' id='preprocesskerasArea' style='display:none'>
+    
             </div>
         </div>
-        <script src="https://d3js.org/d3.v5.min.js"></script>
-        <script src="d3_main.js" type = 'module'></script>
         
-    </body>
-    
-    
+        <div class='codeArea' id='modelCodeArea'>
+            <div class='PytorchArea' id='modelPytorchArea'>
+                <p>import torch.nn as nn</p>
+                <p>class Net(nn.Module):</p>
+                <p>&emsp;def __init__(self):</p>
+                <p>&emsp;&emsp;super(Net, self).__init__()</p>
+                <div id='__init__'></div>
+                <p>&emsp;def forward(self, x):</p>
+                <div id='forward'></div>
+                <p>&emsp;&emsp;return x</p>
+                <p>net = Net()</p>
+            </div>
+            <div class='tensorflowArea' id='modeltensorflowArea' style='display:none'></div>
+            <div class='kerasArea' id='modelkerasArea' style='display:none'></div>
+        </div>
+        <div class='codeArea' id='resultCodeArea'>
+            <div class='PytorchArea' id='resultPytorchArea' style='display:none'>
+                <p># loss</p>
+                <p>criterion = nn.CrossEntropyLoss()</p>
+                <p># backpropagation method</p>
+                <p>optimizer = optim.SGD(net.parameters(), lr=<span class='learningRate'>learning_rate</span>,
+                    momentum=0.9)</p>
+                <p># hyper-parameters</p>
+                <p>num_epochs = <span class='epoch'></span></p>
+                <p>num_batches = len(trn_loader)</p>
+            </div>
+            <div class='tensorflowArea' id='resulttensorflowArea' style='display:none'>
+                <p>with tf.Session(graph=graph) as sess: <br>
+                    &emsp;sess.run(init)</p>
+
+                <p>&emsp;for epoch in range(<span class='epoch'></span>): <br>
+                    &emsp;&emsp;sess.run(train_init) <br>
+                    &emsp;&emsp;total_loss = 0 <br>
+                    &emsp;&emsp;total_corrects = 0</p>
+
+                <p> &emsp;&emsp;try: <br>
+                    &emsp;&emsp;&emsp;while True: <br>
+                    &emsp;&emsp;&emsp;&emsp;_, loss_val, corrects_val = sess.run([train_op, loss, num_correct_preds])
+                    <br>
+                    &emsp;&emsp;&emsp;&emsp;total_loss += loss_val <br>
+                    &emsp;&emsp;&emsp;&emsp;total_corrects += corrects_val <br>
+                    &emsp;&emsp;except tf.errors.OutOfRangeError: <br>
+                    &emsp;&emsp;&emsp;pass</p>
+
+                <p> &emsp;&emsp;print('Epoch: %02d' % (epoch + 1), 'Loss = {:2.4f}'.format(total_loss * batch_size /
+                    60000), 'Train accuracy = {:2.4f}'.format(total_corrects / 60000))</p>
+
+                <p> &emsp;sess.run(test_init) <br>
+                    &emsp;total_corrects = 0</p>
+
+                <p> &emsp;try: <br>
+                    &emsp;&emsp;while True: <br>
+                    &emsp;&emsp;&emsp;corrects_val = sess.run(num_correct_preds) <br>
+                    &emsp;&emsp;&emsp;total_corrects += corrects_val <br>
+                    &emsp;except tf.errors.OutOfRangeError: <br>
+                    &emsp;pass</p>
+
+                <p> &emsp;print('Test accuracy = {:2.4f}'.format(total_corrects / 10000))</p>
+            </div>
+            <div class='kerasArea' id='resultkerasArea' style='display:none'></div>
+        </div>
+    </div>
+
+</body>
+
+
 </html>
