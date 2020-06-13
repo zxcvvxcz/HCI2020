@@ -36,7 +36,7 @@
 
 .modelSpace{
     overflow-x: auto;
-    overflow-y: hidden;
+    overflow-y: auto;
     margin: 20px 0px;
 }
 
@@ -89,7 +89,9 @@
     text-align: center;
     
 }
-
+.resultSpace{
+    width: 18%;
+}
 .addBtn{
     border: 10px solid white; 
     background-color: rgba(0,0,0,0); 
@@ -135,6 +137,24 @@
 
 .addLayerBtn:not(:last-child){
     border-bottom : none;
+}
+/* tfjs-visor */
+.tfjs-visor-container{
+    width:100%;
+}
+.css-1dwmjn.css-q2ki5z.visor{ 
+    position : static;
+}
+
+.visor-controls, .visor-tabs{
+    visibility: hidden;
+    height: 0;
+    border: 0;
+    margin: 0;
+    padding: 0;
+}
+.visor-surfaces{
+    width: 100%;
 }
 .MLstep, .library{
     border: none;

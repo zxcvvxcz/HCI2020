@@ -158,77 +158,33 @@ let usedActivationLayers = [];
 const filterSizes = [3, 5];
 const strides = [1, 2];
 const paddings = [0, 1];
+const channels = [4, 6, 8, 16, 32, 64, 128];
 const learningRates = [0.001, 0.002, 0.003, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.1];
 const poolSizes = [2, 3, 4];
 let numLayer = 0;
 let numAddBtn = 1;
 let addBtns = [0];
 let stopRequested = false;
+let epochCurr = 0;
 
 function channelCheck(prevLayerDiv){
-    if(prevLayerDiv.select('.layerTitleBtn').node().innerText == layerNames[0]){
-
+    while(!prevLayerDiv.classList.contains('newLayer') ||
+        d3.select(prevLayerDiv).select('.layerTitleBtn').node().innerText != layerNames[0]){
+        if(prevLayerDiv.previousElementSibling == null){
+            return 1;
+        } else{
+            prevLayerDiv = prevLayerDiv.previousElementSibling;
+        }
     }
+    console.log(d3.select(prevLayerDiv).node())
+    return Number(d3.select(prevLayerDiv).select('div > .chanOut').select('.convChannel').property('value'));
 }
 function translate(x, y) {
     return `translate(${x}, ${y})`
 }
 const EXPANDSVG = 3;
 const Duration = 500;
-function changeInputSize(layerDiv){
-    const layerCategory = layerDiv.select('.layerTitleBtn').node().innerText
-    const inputSize = Number(layerDiv.property('id'))
-    layerDiv.select('.input').text('Input: ' + inputSize )
-    console.log('category: ' + layerCategory)
-    let outputSize;
-    if(layerCategory == layerNames[0]){
-        
-        let f = layerDiv.select('.convFilter').property('value')
-        let p = layerDiv.select('.convPadding').property('value')
-        let s = layerDiv.select('.convStride').property('value')
-        outputSize = Math.round((inputSize + 2 * p - f) / s) + 1
-        
-        layerDiv.select('svg').select('.padSquare')
-            .transition()
-            .duration(Duration)
-            .attr('width', (outputSize + 2 * p) * EXPANDSVG)
-            .attr('height', (outputSize + 2 * p) * EXPANDSVG)
-        layerDiv.select('svg').select('.outputSquare')
-            .transition()
-            .duration(Duration)
-            .attr('width', outputSize * EXPANDSVG)
-            .attr('height', outputSize * EXPANDSVG)
 
-        layerDiv.select('.outputTextField').text(outputSize)
-    } else if(layerCategory == layerNames[1]){
-        layerDiv.select('.outputTextField').text(outputSize)
-    } else if(layerCategory == layerNames[2]){
-        let f = layerDiv.select('.poolFilter').property('value')
-        let p = layerDiv.select('.poolPadding').property('value')
-        let s = f
-        const outputSize = Math.round((inputSize + 2 * p - f) / s) + 1
-
-        layerDiv.select('svg').select('.padSquare')
-            .transition()
-            .duration(Duration)
-            .attr('width', (outputSize + 2 * p) * EXPANDSVG)
-            .attr('height', (outputSize + 2 * p) * EXPANDSVG)
-        layerDiv.select('svg').select('.outputSquare')
-            .transition()
-            .duration(Duration)
-            .attr('width', outputSize * EXPANDSVG)
-            .attr('height', outputSize * EXPANDSVG)
-        layerDiv.select('.outputTextField').text(outputSize)
-    } else if(layerCategory == layerNames[3]){
-
-    }
-    if(layerDiv.node().parentNode.nextElementSibling !== null
-        && layerDiv.node().parentNode.nextElementSibling.className == 'addLayerDiv newLayer'){
-        const nextDiv = d3.select(layerDiv.node().parentNode.nextElementSibling).select('div')
-        nextDiv.attr('id', outputSize)
-        changeInputSize(nextDiv)
-    }
-}
 function showSizes(svg, inp, outp, filt, str, padd){
     console.log('input: ' + inp + 'output: ' + outp + 'filter:' + filt + 'stride: ' + str + 'padd: ' + padd)
     const entireSquare = svg.append('rect')
@@ -271,15 +227,26 @@ const playClick = async function () {
     
     if(this.innerHTML == '<i class="fas fa-play-circle fa-3x"></i>'){   //play
         this.innerHTML = '<i class="fas fa-pause-circle fa-3x"></i>';
+        d3.select('.modelSpace').selectAll('button').property('disabled', true)
+        d3.select('.modelSpace').selectAll('select').property('disabled', true)
+        d3.select('.codeSpace').selectAll('select').property('disabled', true)
         run();
-        //make JSON to be exported
     }
     else if(this.innerHTML == '<i class="fas fa-pause-circle fa-3x"></i>'){  //pause
         this.innerHTML = '<i class="fas fa-play-circle fa-3x"></i>';
+        d3.select('.modelSpace').selectAll('button').property('disabled', true)
+        d3.select('.modelSpace').selectAll('select').property('disabled', true)
+        d3.select('.codeSpace').selectAll('select').property('disabled', true)
         //pause learning
     }
     else{   //stop
         //stop learning
+        d3.select('.modelSpace').selectAll('button').property('disabled', false)
+        d3.select('.modelSpace').selectAll('select').property('disabled', false)
+        d3.select('.codeSpace').selectAll('select').property('disabled', false)
+        epochCurr = 0;
+        d3.select('#epochCurr').text(epochCurr)
+        old_history = JSON.parse(JSON.stringify(history));
     }
 }
 const btnTopSvg = d3.selectAll('.btnTop')
@@ -351,29 +318,79 @@ const changeNextInputSize = function(grandParent){
             prevGP = prevGP.previousElementSibling;
         }
     }
-    if(grandParent.nextElementSibling !== null){
-        const layerDiv = d3.select(grandParent).select('div')
-        const nextDiv = d3.select(grandParent.nextElementSibling).select('div')
+    const layerDiv = d3.select(grandParent).select('div')
+    if(grandParent !== null){
+        
         if(prevGP !== null){
             if(prevGP.className == 'addLayerDiv newLayer'){
-                nextDiv.attr('id', d3.select(prevGP).select('.outputTextField').node().innerText)
+                layerDiv.attr('id', d3.select(prevGP).select('.outputTextField').node().innerText)
                 console.log('layerDiv id: ' + layerDiv.property('id'))
-                nextDiv.select('.input')
+                layerDiv.select('.input')
                 .text('Input: ' + Number(layerDiv.property('id')))
             }
         }
         else{
-            nextDiv.attr('id', 28)
+            layerDiv.attr('id', 28)
         } 
-        changeInputSize(nextDiv)
+    console.log('layerDiv :', layerDiv.node())
+    if(layerDiv.node().classList.contains('layerVis')){
+        const layerCategory = layerDiv.select('.layerTitleBtn').node().innerText;
+        const inputSize = Number(layerDiv.property('id'))
+        layerDiv.select('.input').text('Input: ' + inputSize )
+        let outputSize;
+        if(layerCategory == layerNames[0]){
+            
+            let f = layerDiv.select('.convFilter').property('value')
+            let p = layerDiv.select('.convPadding').property('value')
+            let s = layerDiv.select('.convStride').property('value')
+            outputSize = Math.round((inputSize + 2 * p - f) / s) + 1
+            
+            layerDiv.select('svg').select('.padSquare')
+                .transition()
+                .duration(Duration)
+                .attr('width', (outputSize + 2 * p) * EXPANDSVG)
+                .attr('height', (outputSize + 2 * p) * EXPANDSVG)
+            layerDiv.select('svg').select('.outputSquare')
+                .transition()
+                .duration(Duration)
+                .attr('width', outputSize * EXPANDSVG)
+                .attr('height', outputSize * EXPANDSVG)
+
+            layerDiv.select('.outputTextField').text(outputSize)
+        } else if(layerCategory == layerNames[1]){
+            layerDiv.select('.outputTextField').text(outputSize)
+        } else if(layerCategory == layerNames[2]){
+            let f = layerDiv.select('.poolFilter').property('value')
+            let p = layerDiv.select('.poolPadding').property('value')
+            let s = f
+            const outputSize = Math.round((inputSize + 2 * p - f) / s) + 1
+
+            layerDiv.select('svg').select('.padSquare')
+                .transition()
+                .duration(Duration)
+                .attr('width', (outputSize + 2 * p) * EXPANDSVG)
+                .attr('height', (outputSize + 2 * p) * EXPANDSVG)
+            layerDiv.select('svg').select('.outputSquare')
+                .transition()
+                .duration(Duration)
+                .attr('width', outputSize * EXPANDSVG)
+                .attr('height', outputSize * EXPANDSVG)
+            layerDiv.select('.outputTextField').text(outputSize)
+        } else if(layerCategory == layerNames[3]){
+
+        }
+        changeNextInputSize(grandParent.nextElementSibling)
+        }
     }
 }
 const closeFunc = function(){
     const grandParent = this.parentNode.parentNode;
+    const nextGP = grandParent.nextElementSibling;
     const prevGP = grandParent.previousElementSibling;
-    changeNextInputSize(grandParent);
     
     d3.select(this.parentNode.parentNode).remove()
+    console.log('nextGP: ' + nextGP)
+    changeNextInputSize(nextGP);
 }
 const makeLayer = function (layerDiv, prevSibling, value) {
     console.log('Make layer')
@@ -393,11 +410,13 @@ const makeLayer = function (layerDiv, prevSibling, value) {
         //addLayerFunc
         d3.select(this).addLayerFunc();
     })
-    let inputSize = 28
+    let inputSize = 28;
     let outputSize;
-    if(prevSibling.classList.contains('newLayer')){
-        inputSize = Number(d3.select(prevSibling).select('.layerVis').select('.outputTextField').node().innerText);
+    while(prevSibling != null && !prevSibling.classList.contains('newLayer')){
+        prevSibling = prevSibling.previousElementSibling;
     }
+    if(prevSibling != null && prevSibling.classList.contains('newLayer'))
+        inputSize = Number(d3.select(prevSibling).select('.layerVis').select('.outputTextField').node().innerText);
     layerDiv.attr('id', inputSize)
     console.log(layerDiv.property('id'))
     
@@ -502,17 +521,24 @@ const makeLayer = function (layerDiv, prevSibling, value) {
                 .attr('x', p * EXPANDSVG)
                 .attr('y', p * EXPANDSVG)
             
-            const grandParent = this.parentNode.parentNode
+            const grandParent = this.parentNode.parentNode;
             changeNextInputSize(grandParent);
         })
-        let chanIn = 1; //channel only changes by conv
+        let chanIn = channelCheck(layerDiv.node().parentNode.previousElementSibling); //channel only changes by conv
         const labelChanIn = layerDiv.append('label')
-            .text('Channel in: ' + chanIn)
+            .text('Ch in: ' + chanIn)
+            .attr('class', 'chanIn')
             .style('float', 'left')
         const labelChanOut = layerDiv.append('label')
-            .text('Channel out: 1')
+            .text('Ch out: ')
+            .attr('class', 'chanOut')
             .style('float', 'left')
-
+        const dropdownChannel = labelChanOut.append('select')
+            .attr('class', 'convChannel')
+        dropdownChannel.selectAll('option').data(channels)
+            .enter().append('option')
+            .attr('value', d => d)
+            .html(d => d)
         let f = dropdownFilter.property('value')
         let p = dropdownPadding.property('value')
         let s = dropdownStride.property('value')
@@ -721,8 +747,7 @@ const addLayerFunc = function () {
             }
             newLayer.attr('class', 'addLayerDiv newLayer')
             const newNewLayer = newLayer.append('div')
-            // makeLayer(newNewLayer, i, value)
-            console.log(siblingGPPrev)
+            console.log('siblingGPPrev: ' + siblingGPPrev)
             makeLayer(newNewLayer, siblingGPPrev, value)
             newLayer.append('button')
                 .html(addBtnHtml)
@@ -804,8 +829,20 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
             const PytorchInitParagraph = PytorchInit.append('p')
             const PytorchForwardParagraph = PytorchForward.append('p')
             if(layerName == layerNames[0]){ //conv
+                const chanIn = layerDiv.select('.chanIn').node().innerText.replace("Ch in: ",'')
                 PytorchInitParagraph.append('span')
-                    .html('&emsp;&emsp;self.conv' + numConv + ' = nn.Conv2d(1, 1, ')
+                    .html('&emsp;&emsp;self.conv' + numConv + ' = nn.Conv2d(' + chanIn + ', ')
+                const channelSize = layerDiv.select('.convChannel').property('value')
+                const dropdownChannel = PytorchInitParagraph.append('select')
+                    .attr('class', 'convChannelCode')
+                dropdownChannel.selectAll('option').data(channels)
+                    .enter().append('option')
+                    .attr('value', d => d)
+                    .html(d => d)
+                    .property("selected", function(d){ return d === channelSize; })
+                PytorchInitParagraph.append('span')
+                    .text(', ')
+
                 const filterSize = layerDiv.select('.convFilter').property('value')
                 console.log(layerDiv.select('.convFilter').property('value'))
                 const dropdownFilter = PytorchInitParagraph.append('select')
@@ -900,7 +937,8 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
                     .html('&emsp;&emsp;x = self.pool' + numPool + '(x)')
                 numPool += 1;
             } else if(layerName == layerNames[3]){
-                const outputSize = layerDiv.select('div').property('id') * layerDiv.select('div').property('id')
+                const outputSize = Math.pow(layerDiv.select('div').property('id'), 2) 
+                    * channelCheck(layerDiv.node().previousElementSibling);
                 PytorchInitParagraph.append('span')
                     .html('&emsp;&emsp;self.fc = ' + ' = nn.Linear(' + outputSize + ', 10)')
                     //channel size is always 1
@@ -952,20 +990,26 @@ mlStepBtns.on('click',function () {
 
 /*********** MACHINE LEARNING USING TENSORFLOW.JS ***********/
 
-  async function run() {  
-      const data = new MnistData();
-      await data.load();
+async function run() {  
+    const data = new MnistData();
+    await data.load();
     //   await showExamples(data);
+
+    const model = getModel();
+    tfvis.show.modelSummary({name: 'Model Architecture'}, model);
+    d3.select('.tf-surface')
+        .style('visibility', 'hidden')
+        .style('height', '0')
+    let oldParent = document.getElementById('tfjs-visor-container');
+    let newParent = document.getElementById('resultSpace');
+    newParent.appendChild(oldParent);
+    await train(model, data);
+
+//   await showAccuracy(model, data);
+}  
   
-      const model = getModel();
-      tfvis.show.modelSummary({name: 'Model Architecture'}, model);
-      
-      await train(model, data);
-  
-      await showAccuracy(model, data);
-      await showConfusion(model, data);
-  }  
-  
+const history = [];
+const old_history = [];
   // Model
 function getModel() {
     const model = tf.sequential();
@@ -1051,11 +1095,11 @@ function getModel() {
 
     // Training
     async function train(model, data) {
-    const metrics = ['loss', 'val_loss', 'acc', 'val_acc'];
+    const metrics = ['acc', 'val_acc'];
     const container = {
-        name: 'Model Training', styles: { height: '1000px' }
+        name: 'Train Result'
     };
-    const fitCallbacks = tfvis.show.fitCallbacks(container, metrics);
+    // const fitCallbacks = tfvis.show.fitCallbacks(container, metrics);
     
     let BATCH_SIZE = Number(d3.select('#batchSize').property('value'));
     console.log('batch size: ', BATCH_SIZE);
@@ -1077,13 +1121,18 @@ function getModel() {
         d.labels
         ];
     });
-    
     return model.fit(trainXs, trainYs, {
         batchSize: BATCH_SIZE,
         validationData: [testXs, testYs],
         epochs: 10,
         shuffle: true,
-        callbacks: fitCallbacks
+        callbacks: {
+            onEpochEnd: (epoch, log) => {
+                history.push(log);
+                tfvis.show.history(container, history, ['acc']);
+                d3.select('#epochCurr').text(++epochCurr)
+            }
+        }
     });
     }
   
@@ -1102,21 +1151,3 @@ function getModel() {
   }
   
   
-  async function showAccuracy(model, data) {
-    const [preds, labels] = doPrediction(model, data);
-    const classAccuracy = await tfvis.metrics.perClassAccuracy(labels, preds);
-    const container = {name: 'Accuracy', tab: 'Evaluation'};
-    tfvis.show.perClassAccuracy(container, classAccuracy, classNames);
-  
-    labels.dispose();
-  }
-  
-  async function showConfusion(model, data) {
-    const [preds, labels] = doPrediction(model, data);
-    const confusionMatrix = await tfvis.metrics.confusionMatrix(labels, preds);
-    const container = {name: 'Confusion Matrix', tab: 'Evaluation'};
-    tfvis.render.confusionMatrix(
-        container, {values: confusionMatrix}, classNames);
-  
-    labels.dispose();
-  }
