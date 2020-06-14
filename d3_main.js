@@ -158,6 +158,7 @@ let usedActivationLayers = [];
 const filterSizes = [3, 5];
 const strides = [1, 2];
 const paddings = [0, 1];
+const tfPaddings = ['valid', 'same'];
 const channels = [4, 6, 8, 16, 32, 64, 128];
 const learningRates = [0.001, 0.002, 0.003, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.1];
 const poolSizes = [2, 3, 4];
@@ -166,6 +167,10 @@ let numAddBtn = 1;
 let addBtns = [0];
 let stopLearning = false, pauseLearning = false;
 let epochCurr = 0;
+
+
+
+
 
 function channelCheck(prevLayerDiv){
     while(!prevLayerDiv.classList.contains('newLayer') ||
@@ -221,6 +226,11 @@ function showSizes(svg, inp, outp, filt, str, padd){
         .attr('class', 'filterSquare')
     return;
 }
+const batchChange = d3.select('#batchSize').on('change', function(){
+    d3.select('.batchSize').text(d3.select(this).property('value'))
+})
+d3.select('.exampleGroup').selectAll('button').property('disabled', true)
+d3.select('.exampleGroup').selectAll('select').property('disabled', true)
 const [btnSvgWidth, btnSvgHeight] = [300, 100];
 const [iconWidth, iconHeight] = [50, 50];
 const playClick = async function () {
@@ -627,6 +637,7 @@ const makeLayer = function (layerDiv, prevSibling, value) {
             .attr('class', 'input')
             .style('float', 'left')
         const labelFilter = layerDiv.append('label')
+            .attr('class', 'filter')
             .text('Filter: ')
             .style('float', 'left')
         const dropdownFilter = layerDiv.append('select')
@@ -663,9 +674,11 @@ const makeLayer = function (layerDiv, prevSibling, value) {
         })
         const labelStride = layerDiv.append('label')
             .text('Stride: ' + String(d3.select('.poolFilter').property('value')))
+            .attr('class', 'poolStride')
             .style('float', 'left')
             .style('clear', 'right')
         const labelPadding = layerDiv.append('label')
+            .attr('class', 'pad')
             .text('Padding: ')
             .style('float', 'left')
         const dropdownPadding = layerDiv.append('select')
@@ -845,42 +858,44 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
     const codeAreaId = d3.select('.MLstep.active').property('id') + 'Area'
     console.log('codeAreaId: ' + codeAreaId)
     const codeSpace = d3.select('#'.concat(codeAreaId)).select('.' + currLib + 'Area')
+    modelLayers = d3.selectAll('.newLayer')
     
     if(currLib == 'Pytorch'){
         const PytorchInit = codeSpace.select('#__init__')
         const PytorchForward = codeSpace.select('#forward')
         PytorchInit.selectAll('p').remove();
         PytorchForward.selectAll('p').remove();
-        modelLayers = d3.selectAll('.newLayer')
         let numConv = 1, numPool = 1;
-        let activations = [];
         modelLayers.each(function(d, i, nodes){
             const layerDiv = d3.select(this)
             const layerName = layerDiv.select('.layerTitleBtn').node().innerText;
             console.log('layerName: ' + layerName);
-            const inputSize = Number(layerDiv.select('.input').node().innerText.replace('Input: ', ''))
-            const outputSize = Number(layerDiv.select('.outputTextField').node().innerText)
             const PytorchInitParagraph = PytorchInit.append('p')
             const PytorchForwardParagraph = PytorchForward.append('p')
             if(layerName == layerNames[0]){ //conv
                 const chanIn = layerDiv.select('.chanIn').node().innerText.replace("Ch in: ",'')
                 PytorchInitParagraph.append('span')
-                    .html('&emsp;&emsp;self.conv' + numConv + ' = nn.Conv2d(' + chanIn + ', ')
+                    .html('&emsp;&emsp;self.conv' + numConv + ' = nn.Conv2d(')
+                const channelInSpan = PytorchInitParagraph.append('span')
+                    .attr('title', 'input channel size')
+                    .text(chanIn + ', ')
                 const channelSize = layerDiv.select('.convChannel').property('value')
                 const dropdownChannel = PytorchInitParagraph.append('select')
                     .attr('class', 'convChannelCode')
+                    .attr('title', 'output channel size')
                 dropdownChannel.selectAll('option').data(channels)
                     .enter().append('option')
                     .attr('value', d => d)
                     .html(d => d)
                     .property("selected", function(d){ return d == channelSize; })
+                
                 PytorchInitParagraph.append('span')
                     .text(', ')
 
                 const filterSize = layerDiv.select('.convFilter').property('value')
-                console.log(layerDiv.select('.convFilter').property('value'))
                 const dropdownFilter = PytorchInitParagraph.append('select')
                     .attr('class', 'convFilterCode')
+                    .attr('title', 'kernel(filter) size')
                 dropdownFilter.selectAll('option').data(filterSizes)
                     .enter().append('option')
                     .attr('value', d => d)
@@ -892,6 +907,7 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
                 const strideSize = layerDiv.select('.convStride').property('value')
                 const dropdownStride = PytorchInitParagraph.append('select')
                     .attr('class', 'convStrideCode')
+                    .attr('title', 'stride size')
                 dropdownStride.selectAll('option').data(strides)
                     .enter().append('option')
                     .attr('value', d => d)
@@ -902,6 +918,7 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
                 const paddingSize = layerDiv.select('.convPadding').property('value')
                 const dropdownPadding = PytorchInitParagraph.append('select')
                     .attr('class', 'convPaddingCode')
+                    .attr('title', 'padding size')
                 dropdownPadding.selectAll('option').data(paddings)
                     .enter().append('option')
                     .attr('value', d => d)
@@ -920,6 +937,7 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
                 if(!usedActivationLayers.includes(activation)){
                     const dropdownActivation = PytorchInitParagraph.append('select')
                         .attr('class', 'activationLayerCode')
+                        .attr('title', 'Activation function')
                     dropdownActivation.selectAll('option').data(activationLayers)
                         .enter().append('option')
                         .attr('value', d => d)
@@ -937,6 +955,7 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
                 const filterSize = layerDiv.select('.poolFilter').property('value')
                 const dropdownFilter = PytorchInitParagraph.append('select')
                     .attr('class', 'poolFilterCode')
+                    .attr('title', 'kernel(filter) size')
                 dropdownFilter.selectAll('option').data(filterSizes)
                     .enter().append('option')
                     .attr('value', d => d)
@@ -946,18 +965,16 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
                 PytorchInitParagraph.append('span')
                     .text(', ')
                 const strideSize = filterSize
-                const dropdownStride = PytorchInitParagraph.append('select')
+                const dropdownStride = PytorchInitParagraph.append('span')
                     .attr('class', 'poolStrideCode')
-                dropdownStride.selectAll('option').data(strides)
-                    .enter().append('option')
-                    .attr('value', d => d)
-                    .html(d => d)
-                    .property("selected", function(d){ return d === strideSize; })
+                    .attr('title', 'stride size(same as kernel size)')
+                    .text(strideSize)
                 PytorchInitParagraph.append('span')
                     .text(', ')
                 const paddingSize = layerDiv.select('.poolPadding').property('value')
                 const dropdownPadding = PytorchInitParagraph.append('select')
                     .attr('class', 'poolPaddingCode')
+                    .attr('title', 'padding size')
                 dropdownPadding.selectAll('option').data(paddings)
                     .enter().append('option')
                     .attr('value', d => d)
@@ -975,7 +992,6 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
                     * channelCheck(layerDiv.node().previousElementSibling);
                 PytorchInitParagraph.append('span')
                     .html('&emsp;&emsp;self.fc = ' + ' = nn.Linear(' + outputSize + ', 10)')
-                    //channel size is always 1
                 
                 //forward
                 PytorchForwardParagraph.append('span')
@@ -986,9 +1002,247 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
 
         })
     } else if(currLib == 'tensorflow'){
+        const tfSpace = d3.select('#modeltensorflowArea')
+        tfSpace.selectAll('p').remove();
+        modelLayers.each(function(d, i, nodes){
+            const layerDiv = d3.select(this)
+            const layerName = layerDiv.select('.layerTitleBtn').node().innerText;
+            const tensorflowLayer = tfSpace.append('p')
+            if(layerName == layerNames[0]){ //conv
+                tensorflowLayer.html('x = tf.layers.conv2d(x, ')
+                
+                const channelSize = layerDiv.select('.convChannel').property('value')
+                const dropdownChannel = tensorflowLayer.append('select')
+                    .attr('class', 'convChannelCode')
+                    .attr('title', 'output channel size')
+                dropdownChannel.selectAll('option').data(channels)
+                    .enter().append('option')
+                    .attr('value', d => d)
+                    .html(d => d)
+                    .property("selected", function(d){ return d == channelSize; })
+                
+                tensorflowLayer.append('span')
+                    .text(', ')
 
+                const filterSize = layerDiv.select('.convFilter').property('value')
+                const dropdownFilter = tensorflowLayer.append('select')
+                    .attr('class', 'convFilterCode')
+                    .attr('title', 'kernel(filter) size')
+                dropdownFilter.selectAll('option').data(filterSizes)
+                    .enter().append('option')
+                    .attr('value', d => d)
+                    .html(d => d)
+                    .property("selected", function(d){ return d == filterSize; })
+                
+                tensorflowLayer.append('span')
+                    .text(', ')
+                const strideSize = layerDiv.select('.convStride').property('value')
+                const dropdownStride = tensorflowLayer.append('select')
+                    .attr('class', 'convStrideCode')
+                    .attr('title', 'stride size')
+                dropdownStride.selectAll('option').data(strides)
+                    .enter().append('option')
+                    .attr('value', d => d)
+                    .html(d => d)
+                    .property("selected", function(d){ return d == strideSize; })
+                tensorflowLayer.append('span')
+                    .text(', ')
+                const paddingSize = layerDiv.select('.convPadding').property('value')
+                const dropdownPadding = tensorflowLayer.append('select')
+                    .attr('class', 'convPaddingCode')
+                    .attr('title', 'padding size')
+                dropdownPadding.selectAll('option').data(tfPaddings)
+                    .enter().append('option')
+                    .attr('value', d => d)
+                    .html(d => d)
+                    .property("selected", function(d, i){ 
+                        return i == paddingSize; 
+                    })
+                tensorflowLayer.append('span')
+                    .text(')')
+            } else if(layerName == layerNames[1]){
+                const activation = layerDiv.select('.activationLayer').property('value')
+                tensorflowLayer.append('span')
+                    .html('x = tf.nn.') 
+                const dropdownActivation = tensorflowLayer.append('select')
+                    .attr('class', 'activationLayerCode')
+                    .attr('title', 'Activation function')
+                dropdownActivation.selectAll('option').data(activationLayers)
+                    .enter().append('option')
+                    .attr('value', d => d)
+                    .html(d => d.toLowerCase())
+                    .property("selected", function(d){ return d == activation; })
+                tensorflowLayer.append('span')
+                    .text('(x)')
+                    
+            } else if(layerName == layerNames[2]){
+                tensorflowLayer.append('span')
+                    .html('x = tf.layers.MaxPooling2d(x, ')
+                const filterSize = layerDiv.select('.poolFilter').property('value')
+                const dropdownFilter = tensorflowLayer.append('select')
+                    .attr('class', 'poolFilterCode')
+                    .attr('title', 'kernel(filter) size')
+                dropdownFilter.selectAll('option').data(filterSizes)
+                    .enter().append('option')
+                    .attr('value', d => d)
+                    .html(d => d)
+                    .property("selected", function(d){ return d === filterSize; })
+                
+                tensorflowLayer.append('span')
+                    .text(', ')
+                const strideSize = filterSize
+                const dropdownStride = tensorflowLayer.append('span')
+                    .attr('class', 'poolStrideCode')
+                    .attr('title', 'stride size(same as kernel size)')
+                    .text(strideSize)
+                tensorflowLayer.append('span')
+                    .text(', ')
+                const paddingSize = layerDiv.select('.poolPadding').property('value')
+                const dropdownPadding = tensorflowLayer.append('select')
+                    .attr('class', 'poolPaddingCode')
+                    .attr('title', 'padding size')
+                dropdownPadding.selectAll('option').data(tfPaddings)
+                    .enter().append('option')
+                    .attr('value', d => d)
+                    .html(d => d)
+                    .property("selected", function(d, i){ 
+                        return i == paddingSize; 
+                    })
+                tensorflowLayer.append('span')
+                    .text(')')
+                
+            } else if(layerName == layerNames[3]){
+                tensorflowLayer.append('span')
+                    .html('x = tf.layers.flatten(x)<br>')
+                
+                tensorflowLayer.append('span')
+                    .html('logits = tf.layers.dense(x, 10)')
+            }
+
+        })
     } else if(currLib == 'keras'){
+        const kerasSpace = d3.select('#modelkerasArea')
+        kerasSpace.selectAll('p').remove();
+        modelLayers.each(function(d, i, nodes){
+            const layerDiv = d3.select(this)
+            const layerName = layerDiv.select('.layerTitleBtn').node().innerText;
+            console.log('layerName: ' + layerName);
+            const kerasLayer = kerasSpace.append('p')
+            if(layerName == layerNames[0]){ //conv
+                kerasLayer.append('span').text('model.add(layers.Conv2D(')
+                
+                const channelSize = layerDiv.select('.convChannel').property('value')
+                const dropdownChannel = kerasLayer.append('select')
+                    .attr('class', 'convChannelCode')
+                    .attr('title', 'output channel size')
+                dropdownChannel.selectAll('option').data(channels)
+                    .enter().append('option')
+                    .attr('value', d => d)
+                    .html(d => d)
+                    .property("selected", function(d){ return d == channelSize; })
+                
+                kerasLayer.append('span')
+                    .text(', ')
 
+                const filterSize = layerDiv.select('.convFilter').property('value')
+                const dropdownFilter = kerasLayer.append('select')
+                    .attr('class', 'convFilterCode')
+                    .attr('title', 'kernel(filter) size')
+                dropdownFilter.selectAll('option').data(poolSizes)
+                    .enter().append('option')
+                    .attr('value', d => d)
+                    .html(d => d)
+                    .property("selected", function(d){ return d == filterSize; })
+                
+                kerasLayer.append('span')
+                    .text(', ')
+                const strideSize = layerDiv.select('.convStride').property('value')
+                const dropdownStride = kerasLayer.append('select')
+                    .attr('class', 'convStrideCode')
+                    .attr('title', 'stride size')
+                dropdownStride.selectAll('option').data(strides)
+                    .enter().append('option')
+                    .attr('value', d => d)
+                    .html(d => d)
+                    .property("selected", function(d){ return d == strideSize; })
+                kerasLayer.append('span')
+                    .text(', ')
+                const paddingSize = layerDiv.select('.convPadding').property('value')
+                const dropdownPadding = kerasLayer.append('select')
+                    .attr('class', 'convPaddingCode')
+                    .attr('title', 'padding size')
+                dropdownPadding.selectAll('option').data(tfPaddings)
+                    .enter().append('option')
+                    .attr('value', d => d)
+                    .html(d => d)
+                    .property("selected", function(d, i){ 
+                        return i == paddingSize; 
+                    })
+                if(i < 1){
+                    kerasLayer.append('span').text(', input_shape = (28, 28, 1)')
+                }
+                kerasLayer.append('span')
+                    .text('))')
+            } else if(layerName == layerNames[1]){
+                const activation = layerDiv.select('.activationLayer').property('value')
+                kerasLayer.append('span')
+                    .html('model.add(layers.Activation(activation ="') 
+                const dropdownActivation = kerasLayer.append('select')
+                    .attr('class', 'activationLayerCode')
+                    .attr('title', 'Activation function')
+                dropdownActivation.selectAll('option').data(activationLayers)
+                    .enter().append('option')
+                    .attr('value', d => d)
+                    .html(d => d)
+                    .property("selected", function(d){ return d == activation; })
+                kerasLayer.append('span')
+                    .text('")')
+                    
+            } else if(layerName == layerNames[2]){
+                kerasLayer.append('span')
+                    .html('model.add(layers.MaxPooling2d(x, ')
+                const filterSize = layerDiv.select('.poolFilter').property('value')
+                const dropdownFilter = kerasLayer.append('select')
+                    .attr('class', 'poolFilterCode')
+                    .attr('title', 'kernel(filter) size')
+                dropdownFilter.selectAll('option').data(poolSizes)
+                    .enter().append('option')
+                    .attr('value', d => d)
+                    .html(d => d)
+                    .property("selected", function(d){ return d === filterSize; })
+                
+                kerasLayer.append('span')
+                    .text(', ')
+                const strideSize = filterSize
+                const dropdownStride = kerasLayer.append('span')
+                .attr('class', 'poolStrideCode')
+                .attr('title', 'stride size(same as kernel size)')
+                .text(strideSize)
+                kerasLayer.append('span')
+                    .text(', ')
+                const paddingSize = layerDiv.select('.poolPadding').property('value')
+                const dropdownPadding = kerasLayer.append('select')
+                    .attr('class', 'poolPaddingCode')
+                    .attr('title', 'padding size')
+                dropdownPadding.selectAll('option').data(tfPaddings)
+                    .enter().append('option')
+                    .attr('value', d => d)
+                    .html(d => d)
+                    .property("selected", function(d, i){ 
+                        return i == paddingSize; 
+                    })
+                kerasLayer.append('span')
+                    .text('))')
+                
+            } else if(layerName == layerNames[3]){
+                kerasLayer.append('span')
+                    .html('model.add(layers.Flatten())<br>')
+                
+                kerasLayer.append('span')
+                    .html('model.add(layers.Dense(10))')
+            }
+
+        })
     }
 })
 
@@ -1043,7 +1297,7 @@ async function run() {
 
 //   await showAccuracy(model, data);
 }  
-  
+const EPOCH = 20;
 let history = [];
 let old_history = [];
   // Model
@@ -1165,7 +1419,7 @@ function getModel() {
         return model.fit(trainXs, trainYs, {
             batchSize: BATCH_SIZE,
             validationData: [testXs, testYs],
-            epochs: 10,
+            epochs: EPOCH,
             shuffle: true,
             callbacks: {
                 onEpochEnd: async (epoch, log) => {
@@ -1181,6 +1435,16 @@ function getModel() {
                         .transition()
                         .duration(Duration)
                         .text(++epochCurr)
+                    if(epoch + 1 === EPOCH){
+                        d3.select('#play').html('<i class="fas fa-play-circle fa-3x"></i>')
+                        d3.select('.modelSpace').selectAll('button').property('disabled', true)
+                        d3.select('.modelSpace').selectAll('select').property('disabled', true)
+                        d3.select('.betweenSpaces').selectAll('select').property('disabled', true)
+                        d3.select('.codeSpace').selectAll('select').property('disabled', true)
+                        stopLearning = false;
+                        pauseLearning = false;
+                        old_history = history;
+                    }
                 }
             }
         });

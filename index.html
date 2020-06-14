@@ -29,7 +29,7 @@
         <button class='btnLearning' id='play'><i class="fas fa-play-circle fa-3x"></i></button>
         <button class='btnLearning' id='stop'><i class="fas fa-stop-circle fa-3x"></i></button>
         <span id='epoch'>Epoch : <span id='epochCurr'>0</span></span>
-        <button class='btnSaveLoad' id='savePy'>Save .py</button>
+        <!-- <button class='btnSaveLoad' id='savePy'>Save .py</button> -->
         <button class='btnSaveLoad' id='Example'>Example</button>
     </div>
     <div class="modelSpace">
@@ -158,7 +158,7 @@
                             <option value="3">3*3</option>
                             <option value="4">4*4</option>
                         </select>
-                        <label style="float: left; clear: right;">Stride: 2</label>
+                        <label style="float: left; clear: right;" class ='poolStride'>Stride: 2</label>
                         <label style="float: left;">Padding: </label>
                         <select class="poolPadding" style="float: left;" >
                             <option value="0" selected>0</option>
@@ -216,8 +216,8 @@
             <svg class = 'result'></svg> -->
     </div>
     <div class='betweenSpaces'>
-        <label for="learningRate">Learning rate : </label>
-        <select id="learningRate">
+        <label for="learningRate" title = 'learning rate'>Learning rate : </label>
+        <select id="learningRate" title = 'learning rate'>
             <option value="0.001">0.001</option>
             <option value="0.002">0.002</option>
             <option value="0.003">0.003</option>
@@ -229,8 +229,8 @@
             <option value="0.05">0.05</option>
             <option value="0.1">0.1</option>
         </select>
-        <label for="momentum">momentum : </label>
-        <select id="momentum">
+        <label for="momentum" title = 'momentum'>momentum : </label>
+        <select id="momentum" title = 'momentum'>
             <option value="0.9">0.9</option>
             <option value="0.8">0.8</option>
         </select>
@@ -295,9 +295,62 @@
                 <p> # Normalizing the images to the range of [0., 1.]<br>
                     train_images /= 255.<br>
                     test_images /= 255.</p>
+                    <p>batch_size = <span class = '.batchSize'>128</span></p>
+
+                    <p>graph = tf.Graph() <br>
+                        with graph.as_default():  
+                        &emsp;train_ds = tf.data.Dataset.from_tensor_slices((train_images, train_labels))  
+                        &emsp;train_ds = train_ds.shuffle(10000)  
+                        &emsp;train_ds = train_ds.batch(batch_size)</p>
+                    
+                    <p> &emsp;test_ds = tf.data.Dataset.from_tensor_slices((test_images, test_labels))  <br>
+                        &emsp;test_ds = test_ds.batch(batch_size)</p>
+                    
+                    <p> # create an empty iterator with only type and shape information  <br>
+                        iterator = tf.data.Iterator.from_structure(tf.compat.v1.data.get_output_types(train_ds),  tf.compat.v1.data.get_output_shapes(train_ds))  <br>
+                        &emsp;x, y = iterator.get_next()</p>
+                    
+                    <p> # create an operation for initializing the iterator with the train or test dataset <br>
+                        &emsp;train_init = iterator.make_initializer(train_ds) <br>
+                        &emsp;test_init = iterator.make_initializer(test_ds)</p>
             </div>
             <div class='kerasArea' id='preprocesskerasArea' style='display:none'>
+                <p>import tensorflow.compat.v1 as tf<br>
+                    tf.disable_v2_behavior()</p>
     
+                <p># Download the mnist dataset using keras<br>
+                    data_train, data_test = tf.keras.datasets.mnist.load_data()</p>
+    
+                <p># Parse images and labels<br>
+                    (train_images, train_labels) = data_train<br>
+                    (test_images, test_labels) = data_test</p>
+    
+                <p># Numpy reshape &amp; type casting<br>
+                    train_images = train_images.reshape(train_images.shape[0], 28, 28, 1).astype('float32')<br>
+                    test_images = test_images.reshape(test_images.shape[0], 28, 28, 1).astype('float32')<br>
+                    train_labels = train_labels.astype('int64')<br>
+                    test_labels = test_labels.astype('int64')</p>
+                <p> # Normalizing the images to the range of [0., 1.]<br>
+                    train_images /= 255.<br>
+                    test_images /= 255.</p>
+                    <p>batch_size = <span class = '.batchSize'>128</span></p>
+
+                <p>graph = tf.Graph() <br>
+                    with graph.as_default():  
+                    &emsp;train_ds = tf.data.Dataset.from_tensor_slices((train_images, train_labels))  
+                    &emsp;train_ds = train_ds.shuffle(10000)  
+                    &emsp;train_ds = train_ds.batch(batch_size)</p>
+                
+                <p> &emsp;test_ds = tf.data.Dataset.from_tensor_slices((test_images, test_labels))  <br>
+                    &emsp;test_ds = test_ds.batch(batch_size)</p>
+                
+                <p> # create an empty iterator with only type and shape information  <br>
+                    iterator = tf.data.Iterator.from_structure(tf.compat.v1.data.get_output_types(train_ds),  tf.compat.v1.data.get_output_shapes(train_ds))  <br>
+                    &emsp;x, y = iterator.get_next()</p>
+                
+                <p> # create an operation for initializing the iterator with the train or test dataset <br>
+                    &emsp;train_init = iterator.make_initializer(train_ds) <br>
+                    &emsp;test_init = iterator.make_initializer(test_ds)</p>
             </div>
         </div>
         
@@ -305,29 +358,46 @@
             <div class='PytorchArea' id='modelPytorchArea'>
                 <p>import torch.nn as nn</p>
                 <p>class Net(nn.Module):</p>
+                <div id='__init__' title = 'define layers to use'></div>
                 <p>&emsp;def __init__(self):</p>
                 <p>&emsp;&emsp;super(Net, self).__init__()</p>
-                <div id='__init__'></div>
                 <p>&emsp;def forward(self, x):</p>
-                <div id='forward'></div>
+                <div id='forward' title = 'connect layers'></div>
                 <p>&emsp;&emsp;return x</p>
                 <p>net = Net()</p>
             </div>
-            <div class='tensorflowArea' id='modeltensorflowArea' style='display:none'></div>
-            <div class='kerasArea' id='modelkerasArea' style='display:none'></div>
+            <div class='tensorflowArea' id='modeltensorflowArea' style='display:none'>
+
+            </div>
+            <div class='kerasArea' id='modelkerasArea' style='display:none'>
+                <p>import tensorflow as tf <br>
+                    from tensorflow.keras import layers</p>
+                <p>model = tf.keras.Sequential()</p>
+            </div>
         </div>
         <div class='codeArea' id='resultCodeArea'>
             <div class='PytorchArea' id='resultPytorchArea' style='display:none'>
                 <p># loss</p>
                 <p>criterion = nn.CrossEntropyLoss()</p>
                 <p># backpropagation method</p>
-                <p>optimizer = optim.SGD(net.parameters(), lr=<span class='learningRate'>learning_rate</span>,
-                    momentum=0.9)</p>
+                <p>optimizer = optim.SGD(net.parameters(), lr=<span class='learningRate' title = 'learning rate'>learning_rate</span>,
+                    momentum = <span class = 'momentum' title = 'momentum'>0.9</span>)</p>
                 <p># hyper-parameters</p>
                 <p>num_epochs = <span class='epoch'></span></p>
                 <p>num_batches = len(trn_loader)</p>
             </div>
             <div class='tensorflowArea' id='resulttensorflowArea' style='display:none'>
+                with graph.as_default(): <br>
+
+                <p>&emsp;loss = tf.reduce_mean(tf.losses.sparse_softmax_cross_entropy(logits=logits, labels=y))  <br>
+                    &emsp;train_op = tf.train.MomentumOptimizer(
+                        <span class='learningRate' title = 'learning rate'>learning_rate</span>, 
+                        <span class = 'momentum' title = 'momentum'>0.9</span>, 
+                        use_locking=False, name='Momentum', use_nesterov=False
+                    ) <br>
+                    &emsp;num_correct_preds = tf.reduce_sum(tf.cast(tf.equal(tf.argmax(logits, 1), y), tf.int32))</p>
+
+                <p> init = tf.global_variables_initializer()</p>
                 <p>with tf.Session(graph=graph) as sess: <br>
                     &emsp;sess.run(init)</p>
 
@@ -360,7 +430,15 @@
 
                 <p> &emsp;print('Test accuracy = {:2.4f}'.format(total_corrects / 10000))</p>
             </div>
-            <div class='kerasArea' id='resultkerasArea' style='display:none'></div>
+            <div class='kerasArea' id='resultkerasArea' style='display:none'>
+                <p>model.compile(optimizer=keras.optimizers.SGD(<span class='learningRate' title = 'learning rate'>0.01</span>, 
+                    <span title = 'momentum' class = 'momentum'>0.9</span>),  <br>
+                    &emsp;loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),  <br>
+                    &emsp;metrics=['accuracy'])</p>
+                <p>model.fit(train_images, train_labels, epochs=10, batch_size=128)</p>
+                <p>test_loss, test_acc = model.evaluate(test_images, test_labels, verbose=2)</p>
+                <p>print('Test accuracy:', test_acc)</p>
+            </div>
         </div>
     </div>
 

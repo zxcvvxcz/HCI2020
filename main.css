@@ -49,16 +49,21 @@
 .inputSquare{
     fill: gray;
 }
-
+.input{
+    color: gray;
+}
 .padSquare{
     fill:blue;
 }
 
-.outputSquare{
-    fill:black;
+.pad{
+    color:blue;
 }
-
+.outputSquare{
+    fill:peru;
+}
 .outputTextField{
+    color:peru;
     float:left;
     user-select: none;
     -webkit-touch-callout: none;
@@ -74,6 +79,9 @@
 }
 .filterSquare{
     fill:red;
+}
+.filter{
+    color: red;
 }
 .dataSpace, .visSpace, .resultSpace {
     float: left;
