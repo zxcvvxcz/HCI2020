@@ -451,23 +451,89 @@ const makeLayer = function (layerDiv, prevSibling, value) {
         .attr('class', 'layerTitleBtn')
         .text(value)
         .style('float', 'left')
-    layerTitleBtn.on('click', function(){
-        //closeFunc
+    function titleChange() {
+        const newLayers = d3.select(this.parentNode.parentNode.parentNode);
+        let newDiv;
+        if (this.parentNode.nextElementSibling === null) {
+            newDiv = newLayers.append('div')
+        }
+        else {
+            newDiv = d3.select(this).select(function () {
+                return this.parentNode.parentNode.parentNode.insertBefore(document.createElement("div"), this.parentNode.parentNode.nextElementSibling);
+            })
+        }
+        newDiv.attr('class', 'addLayerDiv')
+            .attr('id', 'LayerDiv' + numLayer)
+        const newButtons = newDiv.append('div')
+            .attr('class', 'addLayerGroup')
+            .attr('id', 'Layer' + numLayer)
+        var i;
+        const closeBtn = newButtons.append('button')
+            .attr('class', 'closeBtn')
+            .html(closeBtnHtml)
+            .on('click', closeFunc)
+        for (i = 0; i < 4; i++) {
+            var newButton = newButtons.append('button')
+                .attr('class', 'addLayerBtn')
+                .attr('value', layerNames[i])
+                .text(layerNames[i])
+            newButton.on('mouseover', function () { d3.select(this).style('background-color', 'green') })
+            newButton.on('mouseleave', function () { d3.select(this).style('background-color', '#4CAF50') })
+            newButton.on('click', function () {
+                var value = d3.select(this).property('value');
+                const siblingGPNext = this.parentNode.parentNode.nextElementSibling;
+                const siblingGPPrev = this.parentNode.parentNode.previousElementSibling;
+                d3.select(this.parentNode.parentNode).remove()
+                let newLayer;
+                if (this.parentNode.nextElementSibling === null) {
+                    newLayer = newLayers.append('div')
+                } else {
+                    newLayer = newLayers.select(function () {
+                        return this
+                            .insertBefore(document.createElement("div"), siblingGPNext);
+                    })
+                }
+                newLayer.attr('class', 'addLayerDiv newLayer')
+                const newNewLayer = newLayer.append('div')
+                console.log('siblingGPPrev: ' + siblingGPPrev)
+                makeLayer(newNewLayer, siblingGPPrev, value)
+                newLayer.append('button')
+                    .html(addBtnHtml)
+                    .attr('class', 'addBtn')
+                    .attr('id', 'addBtn' + numAddBtn)
+                    .attr('value', numAddBtn)
+                var addLayerAgain = d3.selectAll('.addBtn').on('click', addLayerFunc)
+                const highlightLayer = d3.selectAll('.addLayerDiv').on('mouseover', function () {
+                    d3.select(this).style('border', '5px solid pink')
+                })
+                const deHighlightLayer = d3.selectAll('.addLayerDiv').on('mouseleave', function () {
+                    d3.select(this).style('border', 'none')
+                })
+                changeNextInputSize(siblingGPNext)
+            })
+        }
+        newDiv.append('button')
+            .html(addBtnHtml)
+            .attr('class', 'addBtn')
+            .attr('id', 'addBtn' + numAddBtn)
+            .attr('value', numAddBtn)
+        var addLayerAgain = d3.selectAll('.addBtn').on('click', addLayerFunc)
+        numLayer++;
+        numAddBtn++;
         d3.select(this.parentNode.parentNode).remove()
-        //addLayerFunc
-        d3.select(this).addLayerFunc();
-    })
+    }
+    layerTitleBtn.on('click', titleChange)
     let inputSize = 28;
     let outputSize;
-    while(prevSibling != null && !prevSibling.classList.contains('newLayer')){
+    while (prevSibling != null && !prevSibling.classList.contains('newLayer')) {
         prevSibling = prevSibling.previousElementSibling;
     }
-    if(prevSibling != null && prevSibling.classList.contains('newLayer'))
+    if (prevSibling != null && prevSibling.classList.contains('newLayer'))
         inputSize = Number(d3.select(prevSibling).select('.layerVis').select('.outputTextField').node().innerText);
     layerDiv.attr('id', inputSize)
     console.log(layerDiv.property('id'))
-    
-    if(value == layerNames[0]){
+
+    if (value == layerNames[0]) {
         const layerShow = layerDiv.append('svg')
             .attr('width', 90)
             .attr('height', 90)
@@ -484,8 +550,8 @@ const makeLayer = function (layerDiv, prevSibling, value) {
         dropdownFilter.selectAll('option').data(filterSizes)
             .enter().append('option')
             .attr('value', d => d)
-            .html(d =>{ return d + '*' + d})
-        dropdownFilter.on('change', function(){
+            .html(d => { return d + '*' + d })
+        dropdownFilter.on('change', function () {
             f = dropdownFilter.property('value')
             outputSize = Math.round((Number(layerDiv.property('id')) + 2 * p - f) / s) + 1
             outputTextField.text(outputSize)
@@ -516,17 +582,17 @@ const makeLayer = function (layerDiv, prevSibling, value) {
         dropdownStride.selectAll('option').data(strides).enter().append('option')
             .attr('value', d => d)
             .html(d => d)
-        dropdownStride.on('change', function(){
+        dropdownStride.on('change', function () {
             s = dropdownStride.property('value')
             outputSize = Math.round((Number(layerDiv.property('id')) + 2 * p - f) / s) + 1
             outputTextField.text(outputSize)
-            
+
             layerShow.select('.outputSquare')
                 .transition()
                 .duration(Duration)
                 .attr('width', outputSize * EXPANDSVG)
                 .attr('height', outputSize * EXPANDSVG)
-            
+
             layerShow.select('.padSquare')
                 .transition()
                 .duration(Duration)
@@ -544,7 +610,7 @@ const makeLayer = function (layerDiv, prevSibling, value) {
         dropdownPadding.selectAll('option').data(paddings).enter().append('option')
             .attr('value', d => d)
             .html(d => d)
-        dropdownPadding.on('change', function(){
+        dropdownPadding.on('change', function () {
             p = dropdownPadding.property('value')
             outputSize = Math.round((Number(layerDiv.property('id')) + 2 * p - f) / s) + 1
             outputTextField.text(outputSize)
@@ -553,7 +619,7 @@ const makeLayer = function (layerDiv, prevSibling, value) {
                 .duration(Duration)
                 .attr('width', (outputSize + 2 * p) * EXPANDSVG)
                 .attr('height', (outputSize + 2 * p) * EXPANDSVG)
-            
+
             layerShow.select('.outputSquare')
                 .transition()
                 .duration(Duration)
@@ -561,13 +627,13 @@ const makeLayer = function (layerDiv, prevSibling, value) {
                 .attr('y', p * EXPANDSVG)
                 .attr('width', outputSize * EXPANDSVG)
                 .attr('height', outputSize * EXPANDSVG)
-            
+
             layerShow.select('.filterSquare')
                 .transition()
                 .duration(Duration)
                 .attr('x', p * EXPANDSVG)
                 .attr('y', p * EXPANDSVG)
-            
+
             const grandParent = this.parentNode.parentNode;
             changeNextInputSize(grandParent.nextElementSibling);
         })
@@ -601,7 +667,7 @@ const makeLayer = function (layerDiv, prevSibling, value) {
             .text(outputSize)
         showSizes(layerShow, Number(layerDiv.property('id')), outputSize, dropdownFilter.property('value'),
             dropdownStride.property('value'), dropdownPadding.property('value'))
-    } else if (value == layerNames[1]){
+    } else if (value == layerNames[1]) {
         const layerShow = layerDiv.append('img')
             .attr('width', 90)
             .attr('height', 90)
@@ -617,21 +683,21 @@ const makeLayer = function (layerDiv, prevSibling, value) {
             .attr('class', 'activationLayer')
         dropdownActivation.selectAll('option').data(activationLayers).enter().append('option')
             .attr('value', d => d)
-            .html(d => {console.log(d); return d})
+            .html(d => { console.log(d); return d })
         const labelOutput = layerDiv.append('label')
             .text('Output: ')
             .style('float', 'left')
         const outputTextField = layerDiv.append('text')
             .attr('class', 'outputTextField')
             .text(Number(layerDiv.property('id')))
-        dropdownActivation.on('change', function(){
-            layerShow.attr('src', '/images/'.concat(d3.select(this).property('value'),'.png'))
+        dropdownActivation.on('change', function () {
+            layerShow.attr('src', '/images/'.concat(d3.select(this).property('value'), '.png'))
         })
-    } else if (value == layerNames[2]){
+    } else if (value == layerNames[2]) {
         const layerShow = layerDiv.append('svg')
             .attr('width', 90)
             .attr('height', 90)
-        
+
         const labelInput = layerDiv.append('label')
             .text('Input: ' + Number(layerDiv.property('id')))
             .attr('class', 'input')
@@ -645,8 +711,8 @@ const makeLayer = function (layerDiv, prevSibling, value) {
         dropdownFilter.selectAll('option').data(poolSizes)
             .enter().append('option')
             .attr('value', d => d)
-            .html(d =>{ return d + '*' + d})
-        dropdownFilter.on('change', function(){
+            .html(d => { return d + '*' + d })
+        dropdownFilter.on('change', function () {
             f = dropdownFilter.property('value')
             s = f;
             outputSize = Math.round((Number(layerDiv.property('id')) + 2 * p - f) / s) + 1
@@ -657,7 +723,7 @@ const makeLayer = function (layerDiv, prevSibling, value) {
                 .duration(Duration)
                 .attr('width', f * EXPANDSVG)
                 .attr('height', f * EXPANDSVG)
-            
+
             layerShow.select('.padSquare')
                 .transition()
                 .duration(Duration)
@@ -670,7 +736,7 @@ const makeLayer = function (layerDiv, prevSibling, value) {
                 .attr('height', (outputSize) * EXPANDSVG)
 
             const grandParent = this.parentNode.parentNode
-            changeNextInputSize(grandParent)            
+            changeNextInputSize(grandParent)
         })
         const labelStride = layerDiv.append('label')
             .text('Stride: ' + String(d3.select('.poolFilter').property('value')))
@@ -687,11 +753,11 @@ const makeLayer = function (layerDiv, prevSibling, value) {
         dropdownPadding.selectAll('option').data(paddings).enter().append('option')
             .attr('value', d => d)
             .html(d => d)
-        dropdownPadding.on('change', function(){
+        dropdownPadding.on('change', function () {
             p = dropdownPadding.property('value')
             outputSize = Math.round((Number(layerDiv.property('id')) + 2 * p - f) / s) + 1
             outputTextField.text(outputSize)
-            
+
             layerShow.select('.padSquare')
                 .transition()
                 .duration(Duration)
@@ -704,7 +770,7 @@ const makeLayer = function (layerDiv, prevSibling, value) {
                 .attr('y', p * EXPANDSVG)
                 .attr('width', outputSize * EXPANDSVG)
                 .attr('height', outputSize * EXPANDSVG)
-            
+
             layerShow.select('.filterSquare')
                 .transition()
                 .duration(Duration)
@@ -712,7 +778,7 @@ const makeLayer = function (layerDiv, prevSibling, value) {
                 .attr('y', p * EXPANDSVG)
 
             const grandParent = this.parentNode.parentNode
-            changeNextInputSize(grandParent)          
+            changeNextInputSize(grandParent)
         })
         let f = dropdownFilter.property('value')
         let p = dropdownPadding.property('value')
@@ -728,12 +794,12 @@ const makeLayer = function (layerDiv, prevSibling, value) {
             .text(outputSize)
         showSizes(layerShow, Number(layerDiv.property('id')), outputSize, dropdownFilter.property('value'),
             dropdownFilter.property('value'), dropdownPadding.property('value'))
-    } else if (value == layerNames[3]){
+    } else if (value == layerNames[3]) {
         const layerShow = layerDiv.append('img')
             .attr('width', 90)
             .attr('height', 90)
             .attr('src', '/images/linear.png')
-        
+
         const labelInput = layerDiv.append('label')
             .text('Input: ' + Number(layerDiv.property('id')))
             .attr('class', 'input')
@@ -744,15 +810,13 @@ const makeLayer = function (layerDiv, prevSibling, value) {
             .attr('class', 'outputTextField')
             .text(10)
     }
-    
+
 }
 
 const addBtnHtml = "<i class = 'fas fa-plus-circle fa'></i>"
 const closeBtnHtml = "<i class = 'fas fa-window-close fa'></i>"
 const addLayerFunc = function () {
-    console.log(this.parentNode.parentNode)
     const newLayers = d3.select(this.parentNode.parentNode);
-    console.log(this.parentNode.nextElementSibling)
     let newDiv;
     if(this.parentNode.nextElementSibling === null){
         newDiv = newLayers.append('div')
@@ -790,8 +854,6 @@ const addLayerFunc = function () {
                 newLayer = newLayers.append('div')
             } else{
                 newLayer = newLayers.select(function(){
-                    // console.log(this.parentNode)
-                    // console.log(this.children)
                     return this
                         .insertBefore(document.createElement("div"), siblingGPNext);
                 })
@@ -815,7 +877,6 @@ const addLayerFunc = function () {
             changeNextInputSize(siblingGPNext)
         })
     }
-    let selected = d3.select(this).property('value')
     newDiv.append('button')
         .html(addBtnHtml)
         .attr('class', 'addBtn')
