@@ -277,12 +277,24 @@ const btnExample = btnTopSvg.select('#Example').on('click', function(){
     const state = this.innerText;
     if(state == exampleTexts[0]){
         this.innerText = exampleTexts[1];
-        d3.select('.addGroup').style('visibility', 'hidden')
-        d3.select('.exampleGroup').style('visibility', 'visible')
+        const addGroup = d3.select('.addGroup')
+            .style('visibility', 'hidden')
+        const exampleGroup = d3.select('.exampleGroup')
+            .style('visibility', 'visible')
+        
+        let oldParent = document.getElementsByClassName('addGroup')[0];
+        let newParent = document.getElementsByClassName('visSpace')[0];
+        newParent.appendChild(oldParent);
     } else{
         this.innerText = exampleTexts[0];
-        d3.select('.addGroup').style('visibility', 'visible')
-        d3.select('.exampleGroup').style('visibility', 'hidden')
+        const addGroup = d3.select('.addGroup')
+            .style('visibility', 'visible')
+        const exampleGroup = d3.select('.exampleGroup')
+            .style('visibility', 'hidden')
+        
+        let oldParent = document.getElementsByClassName('exampleGroup')[0];
+        let newParent = document.getElementsByClassName('visSpace')[0];
+        newParent.appendChild(oldParent);
     }
 })
 
