@@ -29,15 +29,15 @@
     width: 300px;
 }
 .modelSpace, .codeSpace{
-    height : 400px;
+    height: 430px;
     border : 1px solid skyblue;
     padding: 10px;
 }
 
 .modelSpace{
     overflow-x: auto;
-    overflow-y: auto;
-    margin: 20px 0px;
+    overflow-y: hidden;
+    margin: 10px 0px;
 }
 
 .entireSquare{
@@ -85,17 +85,17 @@
 }
 .dataSpace, .visSpace, .resultSpace {
     float: left;
-    height : 400px;
+    height: 430px;
 }
 
 .dataSpace{
-    width: 12%;
+    width: 9%;
 }
 
 .visSpace {
-    width: 70%;
+    width: 60%;
     text-align: center;
-    
+    overflow-y: auto;
 }
 .resultSpace{
     width: 18%;
@@ -109,8 +109,8 @@
 }
 
 .closeBtn{
-    border: 10px solid white; 
-    background-color: rgba(0,0,0,0); 
+    border: 10px solid white;
+    background-color: rgba(0,0,0,0);
     color : red;
     padding: 2px;
     cursor: pointer;
@@ -120,8 +120,10 @@
     height : 100px;
 }
 
-.addBtn, .addLayerBtn {
-    padding: auto;
+.addBtn:not(#addBtn0){
+    left: 20px;
+    position: absolute;
+    top: 370px;
 }
 .addLayerBtn {
     background-color: #4CAF50; /* Green */
@@ -137,18 +139,41 @@
 }
 .addLayerDiv{
     width:100px;
+    position: relative;
 }
+
+#addBtn0{
+    font-size: 42px;
+    height: 50%;
+    padding-top: 180px;
+}
+
+.layerTitleBtn{
+    cursor: pointer;
+    width: 100px;
+    margin-bottom: 20px;
+    background-color: rgb(255, 255, 255); 
+    padding: 5px;
+}
+
 .addGroup, .addLayerGroup, .addLayerDiv, .layerVis{
     display:inline-block;
 }
 
 .newLayer{
     border : none;
+    vertical-align: top;
 }
 
 .addLayerBtn:not(:last-child){
     border-bottom : none;
 }
+
+.convStride, .convFilter, .convPadding, .convChannel, .poolFilter, .poolPadding{
+    float:right;
+}
+
+
 
 label{
     clear:left;

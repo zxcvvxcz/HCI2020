@@ -168,9 +168,16 @@ let addBtns = [0];
 let stopLearning = false, pauseLearning = false;
 let epochCurr = 0;
 
+const metrics = ['acc'];
+const container = {
+    name: 'Train Result'
+};
+// setup result space
+tfvis.show.history(container, [], metrics);
 
-
-
+let oldParent = document.getElementById('tfjs-visor-container');
+let newParent = document.getElementById('resultSpace');
+newParent.appendChild(oldParent);
 
 function channelCheck(prevLayerDiv){
     while(!prevLayerDiv.classList.contains('newLayer') ||
@@ -226,9 +233,16 @@ function showSizes(svg, inp, outp, filt, str, padd){
         .attr('class', 'filterSquare')
     return;
 }
-const batchChange = d3.select('#batchSize').on('change', function(){
-    d3.select('.batchSize').text(d3.select(this).property('value'))
+const setBatch = d3.select('#batchSize').on('change', function(){
+    d3.selectAll('.batchSize').text(d3.select(this).property('value'))
 })
+const setLearningRate = d3.select('#learningRate').on('change', function(){
+    d3.selectAll('.learningRate').text(d3.select(this).property('value'))
+})
+const setMomentum = d3.select('#momentum').on('change', function(){
+    d3.selectAll('.momentum').text(d3.select(this).property('value'))
+})
+
 d3.select('.exampleGroup').selectAll('button').property('disabled', true)
 d3.select('.exampleGroup').selectAll('select').property('disabled', true)
 const [btnSvgWidth, btnSvgHeight] = [300, 100];
@@ -243,7 +257,7 @@ const playClick = async function () {
         d3.select('.codeSpace').selectAll('select').property('disabled', true)
         stopLearning = false;
         pauseLearning = false;
-        old_history = history;
+        // old_history = history;
         history = [];
         run();
     }
@@ -268,7 +282,7 @@ const playClick = async function () {
         pauseLearning = false;
         epochCurr = 0;
         d3.select('#epochCurr').text(epochCurr)
-        old_history = JSON.parse(JSON.stringify(history));
+        // old_history = JSON.parse(JSON.stringify(history));
     }
 }
 const btnTopSvg = d3.selectAll('.btnTop')
@@ -282,6 +296,8 @@ const btnExample = btnTopSvg.select('#Example').on('click', function(){
         const exampleGroup = d3.select('.exampleGroup')
             .style('visibility', 'visible')
         
+        d3.select('.codeSpace').selectAll('select').property('disabled', true)
+
         let oldParent = document.getElementsByClassName('addGroup')[0];
         let newParent = document.getElementsByClassName('visSpace')[0];
         newParent.appendChild(oldParent);
@@ -292,6 +308,8 @@ const btnExample = btnTopSvg.select('#Example').on('click', function(){
         const exampleGroup = d3.select('.exampleGroup')
             .style('visibility', 'hidden')
         
+        d3.select('.codeSpace').selectAll('select').property('disabled', false)
+
         let oldParent = document.getElementsByClassName('exampleGroup')[0];
         let newParent = document.getElementsByClassName('visSpace')[0];
         newParent.appendChild(oldParent);
@@ -351,6 +369,32 @@ let currLib = 'Pytorch'
 
 const changeChannel = function(){
     const channelVal = d3.select(this).property('value')
+
+    const isMyModel = d3.select('#Example').node().innerText == exampleTexts[0];
+    if(isMyModel){  // only change when example is used
+        const layerCode = d3.select('#modelCodeArea').select('.currLib')
+        let index;
+        let nodes = d3.select('.addGroup').selectAll('.newLayer').nodes();
+        for(index = 0; index < nodes.length; index++){
+            if(nodes[index] === this.parentNode.parentNode.parentNode){
+                console.log(nodes[index])
+                break;
+            }
+        }
+        
+        let thisLayer;
+        if(layerCode.node().classList.contains('PytorchArea')){
+            thisLayer = layerCode.select('#__init__').selectAll('p')
+        } else{
+            thisLayer = layerCode.selectAll('p')
+        }
+        thisLayer.each(function(d, i, nodes){
+            if(i === index){
+                console.log(nodes[i])
+                d3.select(nodes[i]).select('.convChannelCode').property('value', channelVal)
+            }
+        })
+    }
     let layerDiv = this.parentNode.parentNode.parentNode;
     while((layerDiv = layerDiv.nextElementSibling) != null){
         if(layerDiv.classList.contains('newLayer') && 
@@ -404,6 +448,10 @@ const changeNextInputSize = function(grandParent){
             let s = layerDiv.select('.convStride').property('value')
             outputSize = Math.round((inputSize + 2 * p - f) / s) + 1
             
+            layerDiv.select('svg').select('.inputSquare')
+                .transition().duration(Duration)
+                .attr('width', inputSize * EXPANDSVG)
+                .attr('height', inputSize * EXPANDSVG)
             layerDiv.select('svg').select('.padSquare')
                 .transition()
                 .duration(Duration)
@@ -412,8 +460,14 @@ const changeNextInputSize = function(grandParent){
             layerDiv.select('svg').select('.outputSquare')
                 .transition()
                 .duration(Duration)
+                .attr('x', p * EXPANDSVG)
+                .attr('y', p * EXPANDSVG)
                 .attr('width', outputSize * EXPANDSVG)
                 .attr('height', outputSize * EXPANDSVG)
+            layerDiv.select('svg').select('.filterSquare')
+                .transition().duration(Duration)
+                .attr('x', p * EXPANDSVG)
+                .attr('y', p * EXPANDSVG)
 
             layerDiv.select('.outputTextField').text(outputSize)
         } else if(layerCategory == layerNames[1]){
@@ -423,7 +477,10 @@ const changeNextInputSize = function(grandParent){
             let p = layerDiv.select('.poolPadding').property('value')
             let s = f
             outputSize = Math.round((inputSize + 2 * p - f) / s) + 1
-
+            layerDiv.select('svg').select('.inputSquare')
+                .transition().duration(Duration)
+                .attr('width', inputSize * EXPANDSVG)
+                .attr('height', inputSize * EXPANDSVG)
             layerDiv.select('svg').select('.padSquare')
                 .transition()
                 .duration(Duration)
@@ -432,8 +489,14 @@ const changeNextInputSize = function(grandParent){
             layerDiv.select('svg').select('.outputSquare')
                 .transition()
                 .duration(Duration)
+                .attr('x', p * EXPANDSVG)
+                .attr('y', p * EXPANDSVG)
                 .attr('width', outputSize * EXPANDSVG)
                 .attr('height', outputSize * EXPANDSVG)
+            layerDiv.select('svg').select('.filterSquare')
+                .transition().duration(Duration)
+                .attr('x', p * EXPANDSVG)
+                .attr('y', p * EXPANDSVG)
             layerDiv.select('.outputTextField').text(outputSize)
         } else if(layerCategory == layerNames[3]){
 
@@ -448,7 +511,6 @@ const closeFunc = function(){
     const prevGP = grandParent.previousElementSibling;
     
     d3.select(this.parentNode.parentNode).remove()
-    console.log('nextGP: ' + nextGP)
     changeNextInputSize(nextGP);
 }
 const makeLayer = function (layerDiv, prevSibling, value) {
@@ -515,12 +577,32 @@ const makeLayer = function (layerDiv, prevSibling, value) {
                     .attr('id', 'addBtn' + numAddBtn)
                     .attr('value', numAddBtn)
                 var addLayerAgain = d3.selectAll('.addBtn').on('click', addLayerFunc)
-                const highlightLayer = d3.selectAll('.addLayerDiv').on('mouseover', function () {
-                    d3.select(this).style('border', '5px solid pink')
-                })
-                const deHighlightLayer = d3.selectAll('.addLayerDiv').on('mouseleave', function () {
-                    d3.select(this).style('border', 'none')
-                })
+                // const highlightLayer = d3.selectAll('.newLayer').on('mouseover', function () {
+                //     d3.select(this).style('border', '5px solid pink');
+                //     let index;
+                //     let nodes = d3.select('.addGroup').selectAll('.newLayer').nodes();
+                //     console.log(this);
+                //     for(index = 0; index < nodes.length; index++){
+                //         if(nodes[index] === this){
+                //             console.log(nodes[index])
+                //             break;
+                //         }
+                //     }
+                //     d3.select('.codeSpace').select('#modelCodeArea').selectAll('div').each(function(d, i, nodes){
+                //         if(i === 0){
+                //             const init = d3.select(this).select('#__init__').selectAll('p').nodes()
+                //             d3.select(init[index]).style('border', '5px solid pink')
+                //             const forward = d3.select(this).select('#forward').selectAll('p').nodes()
+                //             d3.select(forward[index]).style('border', '5px solid pink')
+                //         } else{
+                //             const model = d3.select(this).selectAll('p').nodes()
+                //             d3.select(model[index]).style('border', '5px solid pink')
+                //         }
+                //     })
+                // })
+                // const deHighlightLayer = d3.selectAll('.newLayer').on('mouseleave', function () {
+                //     d3.select(this).style('border', 'none')
+                // })
                 changeNextInputSize(siblingGPNext)
             })
         }
@@ -543,8 +625,7 @@ const makeLayer = function (layerDiv, prevSibling, value) {
     if (prevSibling != null && prevSibling.classList.contains('newLayer'))
         inputSize = Number(d3.select(prevSibling).select('.layerVis').select('.outputTextField').node().innerText);
     layerDiv.attr('id', inputSize)
-    console.log(layerDiv.property('id'))
-
+    const isMyModel = d3.select('#Example').node().innerText == exampleTexts[0];
     if (value == layerNames[0]) {
         const layerShow = layerDiv.append('svg')
             .attr('width', 90)
@@ -567,6 +648,33 @@ const makeLayer = function (layerDiv, prevSibling, value) {
             f = dropdownFilter.property('value')
             outputSize = Math.round((Number(layerDiv.property('id')) + 2 * p - f) / s) + 1
             outputTextField.text(outputSize)
+
+            // const currMode = d3.select('#Example').node().innerText;
+            if(isMyModel){  // only change when example is not used
+                const layerCode = d3.select('#modelCodeArea').select('.currLib')
+                let index;
+                let nodes = d3.select('.addGroup').selectAll('.newLayer').nodes();
+                for(index = 0; index < nodes.length; index++){
+                    if(nodes[index] === this.parentNode.parentNode){
+                        console.log(nodes[index])
+                        break;
+                    }
+                }
+                console.log('index: ' + index)
+                let thisLayer;
+                if(layerCode.node().classList.contains('PytorchArea')){
+                    thisLayer = layerCode.select('#__init__')
+                } else{
+                    thisLayer = layerCode
+                }
+                thisLayer.selectAll('p').each(function(d, i, nodes){
+                    if(i === index){
+                        console.log('nodes[i]: ' + nodes[i])
+                        d3.select(nodes[i]).select('.convFilterCode').property('value', f)
+                    }
+                })
+            }
+            
             layerShow.select('.filterSquare')
                 .transition()
                 .duration(Duration)
@@ -598,7 +706,29 @@ const makeLayer = function (layerDiv, prevSibling, value) {
             s = dropdownStride.property('value')
             outputSize = Math.round((Number(layerDiv.property('id')) + 2 * p - f) / s) + 1
             outputTextField.text(outputSize)
-
+            // const currMode = d3.select('#Example').node().innerText;
+            if(isMyModel){  // only change when example is used
+                const layerCode = d3.select('#modelCodeArea').select('.currLib')
+                let index;
+                let nodes = d3.select('.addGroup').selectAll('.newLayer').nodes();
+                for(index = 1; index < nodes.length; index++){
+                    if(nodes[index] === this.parentNode.parentNode){
+                        break;
+                    }
+                }
+                
+                let thisLayer;
+                if(layerCode.node().classList.contains('PytorchArea')){
+                    thisLayer = layerCode.select('#__init__').selectAll('p')
+                } else{
+                    thisLayer = layerCode.selectAll('p')
+                }
+                thisLayer.each(function(d, i, nodes){
+                    if(i === index){
+                        d3.select(nodes[i]).select('.convStrideCode').property('value', s)
+                    }
+                })
+            }
             layerShow.select('.outputSquare')
                 .transition()
                 .duration(Duration)
@@ -626,6 +756,34 @@ const makeLayer = function (layerDiv, prevSibling, value) {
             p = dropdownPadding.property('value')
             outputSize = Math.round((Number(layerDiv.property('id')) + 2 * p - f) / s) + 1
             outputTextField.text(outputSize)
+            // const currMode = d3.select('#Example').node().innerText;
+            if(isMyModel){  // only change when example is used
+                const layerCode = d3.select('#modelCodeArea').select('.currLib')
+                let index;
+                let nodes = d3.select('.addGroup').selectAll('.newLayer').nodes();
+                for(index = 0; index < nodes.length; index++){
+                    if(nodes[index] === this.parentNode.parentNode){
+                        console.log(nodes[index])
+                        break;
+                    }
+                }
+                
+                let thisLayer;
+                if(layerCode.node().classList.contains('PytorchArea')){
+                    thisLayer = layerCode.select('#__init__').selectAll('p')
+                } else{
+                    thisLayer = layerCode.selectAll('p')
+                }
+                thisLayer.each(function(d, i, nodes){
+                    if(i === index){
+                        if(layerCode.node().classList.contains('PytorchArea')){
+                            d3.select(nodes[i]).select('.poolPaddingCode').property('value', p)
+                        } else{
+                            d3.select(nodes[i]).select('.poolPaddingCode').property('value', tfPaddings[Number(p)])
+                        }
+                    }
+                })
+            }
             layerShow.select('.padSquare')
                 .transition()
                 .duration(Duration)
@@ -670,6 +828,8 @@ const makeLayer = function (layerDiv, prevSibling, value) {
         let s = dropdownStride.property('value')
         outputSize = Math.round((Number(layerDiv.property('id')) + 2 * p - f) / s) + 1
         console.log('inputSize: ' + Number(layerDiv.property('id')) + ', f: ' + f + ", p: " + p + ', s: ' + s + ', outputSize:' + outputSize)
+        
+        
 
         const labelOutput = layerDiv.append('label')
             .text('Output: ')
@@ -695,7 +855,7 @@ const makeLayer = function (layerDiv, prevSibling, value) {
             .attr('class', 'activationLayer')
         dropdownActivation.selectAll('option').data(activationLayers).enter().append('option')
             .attr('value', d => d)
-            .html(d => { console.log(d); return d })
+            .html(d => d)
         const labelOutput = layerDiv.append('label')
             .text('Output: ')
             .style('float', 'left')
@@ -703,7 +863,37 @@ const makeLayer = function (layerDiv, prevSibling, value) {
             .attr('class', 'outputTextField')
             .text(Number(layerDiv.property('id')))
         dropdownActivation.on('change', function () {
-            layerShow.attr('src', '/images/'.concat(d3.select(this).property('value'), '.png'))
+            let value = d3.select(this).property('value')
+            layerShow.attr('src', '/images/'.concat(value, '.png'))
+            // const currMode = d3.select('#Example').node().innerText;
+            if(isMyModel){  // only change when example is used
+                const layerCode = d3.select('#modelCodeArea').select('.currLib')
+                let index;
+                let nodes = d3.select('.addGroup').selectAll('.newLayer').nodes();
+                for(index = 0; index < nodes.length; index++){
+                    if(nodes[index] === this.parentNode.parentNode){
+                        console.log(nodes[index])
+                        break;
+                    }
+                }
+                
+                let thisLayer;
+                if(layerCode.node().classList.contains('PytorchArea')){
+                    thisLayer = layerCode.select('#__init__').selectAll('p')
+                } else{
+                    value = value.toLowerCase();
+                    thisLayer = layerCode.selectAll('p')
+                }
+                thisLayer.each(function(d, i, nodes){
+                    if(i === index){
+                        d3.select(nodes[i]).select('.activationLayerCode').property('value', value)
+                        if(layerCode.node().classList.contains('PytorchArea')){
+                            d3.select(nodes[i]).select('span')
+                                .html('&emsp;&emsp;self.' + value + ' = nn.')
+                        }
+                    }
+                })
+            }
         })
     } else if (value == layerNames[2]) {
         const layerShow = layerDiv.append('svg')
@@ -729,6 +919,33 @@ const makeLayer = function (layerDiv, prevSibling, value) {
             s = f;
             outputSize = Math.round((Number(layerDiv.property('id')) + 2 * p - f) / s) + 1
             outputTextField.text(outputSize)
+
+            // const currMode = d3.select('#Example').node().innerText;
+            if(isMyModel){  // only change when example is used
+                const layerCode = d3.select('#modelCodeArea').select('.currLib')
+                let index;
+                let nodes = d3.select('.addGroup').selectAll('.newLayer').nodes();
+                for(index = 0; index < nodes.length; index++){
+                    if(nodes[index] === this.parentNode.parentNode){
+                        console.log(nodes[index])
+                        break;
+                    }
+                }
+                
+                let thisLayer;
+                if(layerCode.node().classList.contains('PytorchArea')){
+                    thisLayer = layerCode.select('#__init__').selectAll('p')
+                } else{
+                    thisLayer = layerCode.selectAll('p')
+                }
+                thisLayer.each(function(d, i, nodes){
+                    if(i === index){
+                        d3.select(nodes[i]).select('.poolFilterCode').property('value', f)
+                        d3.select(nodes[i]).select('.poolStrideCode').property('value', f)
+                    }
+                })
+            }
+
             labelStride.text('Stride: ' + s)
             layerShow.select('.filterSquare')
                 .transition()
@@ -754,7 +971,6 @@ const makeLayer = function (layerDiv, prevSibling, value) {
             .text('Stride: ' + String(d3.select('.poolFilter').property('value')))
             .attr('class', 'poolStride')
             .style('float', 'left')
-            .style('clear', 'right')
         const labelPadding = layerDiv.append('label')
             .attr('class', 'pad')
             .text('Padding: ')
@@ -770,18 +986,54 @@ const makeLayer = function (layerDiv, prevSibling, value) {
             outputSize = Math.round((Number(layerDiv.property('id')) + 2 * p - f) / s) + 1
             outputTextField.text(outputSize)
 
+            // const currMode = d3.select('#Example').node().innerText;
+            if(isMyModel){  // only change when example is used
+                const layerCode = d3.select('#modelCodeArea').select('.currLib')
+                let index;
+                let nodes = d3.select('.addGroup').selectAll('.newLayer').nodes();
+                for(index = 0; index < nodes.length; index++){
+                    if(nodes[index] === this.parentNode.parentNode){
+                        console.log(nodes[index])
+                        break;
+                    }
+                }
+                
+                let thisLayer;
+                if(layerCode.node().classList.contains('PytorchArea')){
+                    thisLayer = layerCode.select('#__init__').selectAll('p')
+                } else{
+                    thisLayer = layerCode.selectAll('p')
+                }
+                thisLayer.each(function(d, i, nodes){
+                    if(i === index){
+                        if(layerCode.node().classList.contains('PytorchArea')){
+                            d3.select(nodes[i]).select('.poolPaddingCode').property('value', p)
+                        } else{
+                            d3.select(nodes[i]).select('.poolPaddingCode').property('value', tfPaddings[Number(p)])
+                        }
+                    }
+                })
+            }
+            layerShow.select('.outputSquare')
+                .transition()
+                .duration(Duration)
+                .attr('width', outputSize * EXPANDSVG)
+                .attr('height', outputSize * EXPANDSVG)
+            
             layerShow.select('.padSquare')
                 .transition()
                 .duration(Duration)
                 .attr('width', (outputSize + 2 * p) * EXPANDSVG)
                 .attr('height', (outputSize + 2 * p) * EXPANDSVG)
-            layerShow.select('.outputSquare')
-                .transition()
-                .duration(Duration)
-                .attr('x', p * EXPANDSVG)
-                .attr('y', p * EXPANDSVG)
-                .attr('width', outputSize * EXPANDSVG)
-                .attr('height', outputSize * EXPANDSVG)
+            console.log('p: ' + p + 's: ' + s + 'f: ' + f)
+            if(p > 0){
+                layerShow.select('.outputSquare')
+                    .transition()
+                    .duration(Duration)
+                    .attr('x', p )
+                    .attr('y', p * EXPANDSVG)
+            }
+            
 
             layerShow.select('.filterSquare')
                 .transition()
@@ -794,7 +1046,7 @@ const makeLayer = function (layerDiv, prevSibling, value) {
         })
         let f = dropdownFilter.property('value')
         let p = dropdownPadding.property('value')
-        let s = dropdownFilter.property('value')
+        let s = f
         outputSize = Math.round((Number(layerDiv.property('id')) + 2 * p - f) / s) + 1
         console.log('inputSize: ' + Number(layerDiv.property('id')) + ', f: ' + f + ", p: " + p + ', s: ' + s + ', outputSize:' + outputSize)
 
@@ -880,11 +1132,47 @@ const addLayerFunc = function () {
                 .attr('id', 'addBtn' + numAddBtn)
                 .attr('value', numAddBtn)
             var addLayerAgain = d3.selectAll('.addBtn').on('click', addLayerFunc)
-            const highlightLayer = d3.selectAll('.addLayerDiv').on('mouseover', function(){
-                d3.select(this).style('border', '5px solid pink')
+            const highlightLayer = d3.selectAll('.newLayer').on('mouseover', function () {
+                d3.select(this).style('border', '5px solid pink');
+                let index;
+                let nodes = d3.select('.addGroup').selectAll('.newLayer').nodes();
+                for(index = 0; index < nodes.length; index++){
+                    if(nodes[index] === this){
+                        break;
+                    }
+                }
+                d3.select('.codeSpace').select('#modelCodeArea').selectAll('div').each(function(d, i, nodes){
+                    if(i === 0){
+                        const init = d3.select(this).select('#__init__').selectAll('p').nodes()
+                        d3.select(init[index]).style('border', '5px solid pink')
+                        const forward = d3.select(this).select('#forward').selectAll('p').nodes()
+                        d3.select(forward[index]).style('border', '5px solid pink')
+                    } else{
+                        const model = d3.select(this).selectAll('p').nodes()
+                        d3.select(model[index]).style('border', '5px solid pink')
+                    }
+                })
             })
             const deHighlightLayer = d3.selectAll('.addLayerDiv').on('mouseleave', function(){
                 d3.select(this).style('border', 'none')
+                let index;
+                let nodes = d3.select('.addGroup').selectAll('.newLayer').nodes();
+                for(index = 0; index < nodes.length; index++){
+                    if(nodes[index] === this){
+                        break;
+                    }
+                }
+                d3.select('.codeSpace').select('#modelCodeArea').selectAll('div').each(function(d, i, nodes){
+                    if(i === 0){
+                        const init = d3.select(this).select('#__init__').selectAll('p').nodes()
+                        d3.select(init[index]).style('border', 'none')
+                        const forward = d3.select(this).select('#forward').selectAll('p').nodes()
+                        d3.select(forward[index]).style('border', 'none')
+                    } else{
+                        const model = d3.select(this).selectAll('p').nodes()
+                        d3.select(model[index]).style('border', 'none')
+                    }
+                })
             })
             changeNextInputSize(siblingGPNext)
         })
@@ -900,6 +1188,11 @@ const addLayerFunc = function () {
 }
 var addLayer = d3.selectAll('.addBtn').on('click', addLayerFunc)
 
+
+
+
+
+//CodeArea
 const libAreas = ['PytorchArea', 'tensorflowArea', 'kerasArea']
 
 const chooseLib = d3.selectAll('.library').on('click', function(){
@@ -930,9 +1223,14 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
     currLib = d3.select(this).property('value')
     const codeAreaId = d3.select('.MLstep.active').property('id') + 'Area'
     console.log('codeAreaId: ' + codeAreaId)
+    d3.select('#' + codeAreaId).selectAll('div').each(function(d, i){
+        console.log(this);
+        this.className = this.className.replace(" currLib", "");
+    })
     const codeSpace = d3.select('#'.concat(codeAreaId)).select('.' + currLib + 'Area')
+    codeSpace.attr('class', codeSpace.attr('class') + ' currLib')
     modelLayers = d3.selectAll('.newLayer')
-    
+    const isMyModel = d3.select('#Example').node().innerText == exampleTexts[0];
     if(currLib == 'Pytorch'){
         const PytorchInit = codeSpace.select('#__init__')
         const PytorchForward = codeSpace.select('#forward')
@@ -944,7 +1242,9 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
             const layerName = layerDiv.select('.layerTitleBtn').node().innerText;
             console.log('layerName: ' + layerName);
             const PytorchInitParagraph = PytorchInit.append('p')
+            PytorchInitParagraph.attr('id', layerDiv.select('.layerVis').property('id'))
             const PytorchForwardParagraph = PytorchForward.append('p')
+            let outputSize;
             if(layerName == layerNames[0]){ //conv
                 const chanIn = layerDiv.select('.chanIn').node().innerText.replace("Ch in: ",'')
                 PytorchInitParagraph.append('span')
@@ -961,7 +1261,34 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
                     .attr('value', d => d)
                     .html(d => d)
                     .property("selected", function(d){ return d == channelSize; })
-                
+                dropdownChannel.on('change', function(){
+                    const value = d3.select(this).property('value');
+                    let index;
+                    const nodes = this.parentNode.parentNode.children;
+                    for(index = 0; index < nodes.length; index++){
+                        if(nodes[index] === this.parentNode)
+                            break;
+                    }
+                    // const currMode = d3.select('#Example').node().innerText;
+                    if(isMyModel){  // only change when example is used
+                        d3.selectAll('.newLayer').each(function(d,i, nodes){
+                            if(i === index){
+                                const select = d3.select(nodes[i]).select('.layerVis').select('.convChannel')
+                                console.log(select.node());
+                                select.property("value", value);
+                                let layerDiv = nodes[i];
+                                console.log('layerDiv: ', layerDiv)
+                                while((layerDiv = layerDiv.nextElementSibling) != null){
+                                    if(layerDiv.classList.contains('newLayer') && 
+                                        d3.select(layerDiv).select('div > .layerTitleBtn').node().innerText == layerNames[0]){
+                                            d3.select(layerDiv).select('div > .chanIn').text('Ch in: ' + value)
+                                            return;
+                                    }
+                                }
+                            }
+                        })
+                    }
+                })
                 PytorchInitParagraph.append('span')
                     .text(', ')
 
@@ -974,7 +1301,48 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
                     .attr('value', d => d)
                     .html(d => d)
                     .property("selected", function(d){ return d == filterSize; })
-                
+                dropdownFilter.on('change', function(){
+                    const value = d3.select(this).property('value');
+                    let index;
+                    const nodes = this.parentNode.parentNode.children;
+                    for(index = 0; index < nodes.length; index++){
+                        if(nodes[index] === this.parentNode)
+                            break;
+                    }
+                    const currMode = d3.select('#Example').node().innerText;
+                    if(isMyModel){  // only change when example is used
+                        d3.selectAll('.newLayer').each(function(d,i, nodes){
+                            if(i === index){
+                                const select = d3.select(nodes[i]).select('.layerVis').select('.convFilter')
+                                console.log(select.node());
+                                select.property("value", value);
+                                f = dropdownFilter.property('value')
+                                outputSize = Math.round((Number(PytorchInitParagraph.property('id')) + 2 * p - f) / s) + 1
+                                console.log("s: " + s + ", p: " + p + ", f:" + f)
+                                const layerVis = d3.select(nodes[i]).select('.layerVis')
+                                console.log("outputsize: " +outputSize)
+                                layerVis.select('.outputTextField').text(outputSize)
+                                const layerShow = layerVis.select('svg')
+                                layerShow.select('.filterSquare')
+                                    .transition()
+                                    .duration(Duration)
+                                    .attr('width', f * EXPANDSVG)
+                                    .attr('height', f * EXPANDSVG)
+                                layerShow.select('.padSquare')
+                                    .transition()
+                                    .duration(Duration)
+                                    .attr('width', (outputSize + 2 * p) * EXPANDSVG)
+                                    .attr('height', (outputSize + 2 * p) * EXPANDSVG)
+                                layerShow.select('.outputSquare')
+                                    .transition()
+                                    .duration(Duration)
+                                    .attr('width', outputSize * EXPANDSVG)
+                                    .attr('height', outputSize * EXPANDSVG)
+                                changeNextInputSize(nodes[i].nextElementSibling)
+                            }
+                        })
+                    }
+                })
                 PytorchInitParagraph.append('span')
                     .text(', ')
                 const strideSize = layerDiv.select('.convStride').property('value')
@@ -986,6 +1354,44 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
                     .attr('value', d => d)
                     .html(d => d)
                     .property("selected", function(d){ return d == strideSize; })
+                dropdownStride.on('change', function(){
+                    const value = d3.select(this).property('value');
+                    let index;
+                    const nodes = this.parentNode.parentNode.children;
+                    for(index = 0; index < nodes.length; index++){
+                        if(nodes[index] === this.parentNode)
+                            break;
+                    }
+                    const currMode = d3.select('#Example').node().innerText;
+                    if(isMyModel){  // only change when example is used
+                        d3.selectAll('.newLayer').each(function(d,i, nodes){
+                            if(i === index){
+                                const select = d3.select(nodes[i]).select('.layerVis').select('.convStride')
+                                console.log(select.node());
+                                select.property("value", value);
+                                s = dropdownStride.property('value')
+                                outputSize = Math.round((Number(PytorchInitParagraph.property('id')) + 2 * p - f) / s) + 1
+                                console.log("s: " + s + ", p: " + p + ", f:" + f)
+                                const layerVis = d3.select(nodes[i]).select('.layerVis')
+                                console.log("outputsize: " +outputSize)
+                                layerVis.select('.outputTextField').text(outputSize)
+                                const layerShow = layerVis.select('svg')
+                                layerShow.select('.outputSquare')
+                                    .transition()
+                                    .duration(Duration)
+                                    .attr('width', outputSize * EXPANDSVG)
+                                    .attr('height', outputSize * EXPANDSVG)
+
+                                layerShow.select('.padSquare')
+                                    .transition()
+                                    .duration(Duration)
+                                    .attr('width', (outputSize + 2 * p) * EXPANDSVG)
+                                    .attr('height', (outputSize + 2 * p) * EXPANDSVG)
+                                changeNextInputSize(nodes[i].nextElementSibling)
+                            }
+                        })
+                    }
+                })
                 PytorchInitParagraph.append('span')
                     .text(', ')
                 const paddingSize = layerDiv.select('.convPadding').property('value')
@@ -997,12 +1403,62 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
                     .attr('value', d => d)
                     .html(d => d)
                     .property("selected", function(d){ return d == paddingSize; })
+                dropdownPadding.on('change', function(){
+                    const value = d3.select(this).property('value');
+                    let index;
+                    const nodes = this.parentNode.parentNode.children;
+                    for(index = 0; index < nodes.length; index++){
+                        if(nodes[index] === this.parentNode)
+                            break;
+                    }
+                    const currMode = d3.select('#Example').node().innerText;
+                    if(isMyModel){  // only change when example is used
+                        d3.selectAll('.newLayer').each(function(d,i, nodes){
+                            if(i === index){
+                                const select = d3.select(nodes[i]).select('.layerVis').select('.convPadding')
+                                console.log(select.node());
+                                select.property("value", value);
+                                p = dropdownPadding.property('value')
+                                outputSize = Math.round((Number(PytorchInitParagraph.property('id')) + 2 * p - f) / s) + 1
+                                
+                                const layerVis = d3.select(nodes[i]).select('.layerVis')
+                                console.log("outputsize: " +outputSize)
+                                layerVis.select('.outputTextField').text(outputSize)
+                                const layerShow = layerVis.select('svg')
+                                layerShow.select('.padSquare')
+                                    .transition()
+                                    .duration(Duration)
+                                    .attr('width', (outputSize + 2 * p) * EXPANDSVG)
+                                    .attr('height', (outputSize + 2 * p) * EXPANDSVG)
+
+                                layerShow.select('.outputSquare')
+                                    .transition()
+                                    .duration(Duration)
+                                    .attr('x', p * EXPANDSVG)
+                                    .attr('y', p * EXPANDSVG)
+                                    .attr('width', outputSize * EXPANDSVG)
+                                    .attr('height', outputSize * EXPANDSVG)
+
+                                layerShow.select('.filterSquare')
+                                    .transition()
+                                    .duration(Duration)
+                                    .attr('x', p * EXPANDSVG)
+                                    .attr('y', p * EXPANDSVG)
+
+                                changeNextInputSize(nodes[i].nextElementSibling)
+                            }
+                        })
+                    }
+                })
                 PytorchInitParagraph.append('span')
                     .text(')')
                 //forward
                 PytorchForwardParagraph.append('span')
                     .html('&emsp;&emsp;x = self.conv' + numConv + '(x)')
                 numConv += 1;
+                let f = dropdownFilter.property('value')
+                let p = dropdownPadding.property('value')
+                let s = dropdownStride.property('value')
             } else if(layerName == layerNames[1]){
                 const activation = layerDiv.select('.activationLayer').property('value')
                 PytorchInitParagraph.append('span')
@@ -1016,6 +1472,31 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
                         .attr('value', d => d)
                         .html(d => d)
                         .property("selected", function(d){ return d == activation; })
+                    dropdownActivation.on('change', function(){
+                        const currMode = d3.select('#Example').node().innerText;
+                        if(isMyModel){  // only change when example is used
+                            const value = d3.select(this).property('value');
+                            let index;
+                            const nodes = this.parentNode.parentNode.children;
+                            for(index = 0; index < nodes.length; index++){
+                                if(nodes[index] === this.parentNode)
+                                    break;
+                            }
+                            d3.selectAll('.newLayer').each(function(d,i, nodes){
+                                if(i === index){
+                                    const layerVis = d3.select(nodes[i]).select('.layerVis')
+                                    const select = layerVis.select('.activationLayer')
+                                    // console.log(select.node());
+                                    select.property("value", value);
+                                    // console.log("outputsize: " +outputSize)
+                                    const layerShow = layerVis.select('img')
+                                    layerShow.attr('src', '/images/' + value + '.png')
+                                    PytorchInitParagraph.select('span')
+                                        .html('&emsp;&emsp;self.' + activation + ' = nn.')
+                                }
+                            })
+                        }
+                    })
                     PytorchInitParagraph.append('span')
                         .text('()')
                     //forward
@@ -1029,12 +1510,54 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
                 const dropdownFilter = PytorchInitParagraph.append('select')
                     .attr('class', 'poolFilterCode')
                     .attr('title', 'kernel(filter) size')
-                dropdownFilter.selectAll('option').data(filterSizes)
+                dropdownFilter.selectAll('option').data(poolSizes)
                     .enter().append('option')
                     .attr('value', d => d)
                     .html(d => d)
                     .property("selected", function(d){ return d === filterSize; })
-                
+                dropdownFilter.on('change', function(){
+                    const value = d3.select(this).property('value');
+                    let index;
+                    const nodes = this.parentNode.parentNode.children;
+                    for(index = 0; index < nodes.length; index++){
+                        if(nodes[index] === this.parentNode)
+                            break;
+                    }
+                    const currMode = d3.select('#Example').node().innerText;
+                    if(isMyModel){  // only change when example is used
+                        d3.selectAll('.newLayer').each(function(d,i, nodes){
+                            if(i === index){
+                                const select = d3.select(nodes[i]).select('.layerVis').select('.poolFilter')
+                                console.log(select.node());
+                                select.property("value", value);
+                                f = dropdownFilter.property('value')
+                                s = f
+                                outputSize = Math.round((Number(PytorchInitParagraph.property('id')) + 2 * p - f) / s) + 1
+                                console.log("s: " + s + ", p: " + p + ", f:" + f)
+                                const layerVis = d3.select(nodes[i]).select('.layerVis')
+                                console.log("outputsize: " +outputSize)
+                                layerVis.select('.outputTextField').text(outputSize)
+                                const layerShow = layerVis.select('svg')
+                                layerShow.select('.filterSquare')
+                                    .transition()
+                                    .duration(Duration)
+                                    .attr('width', f * EXPANDSVG)
+                                    .attr('height', f * EXPANDSVG)
+                                layerShow.select('.padSquare')
+                                    .transition()
+                                    .duration(Duration)
+                                    .attr('width', (outputSize + 2 * p) * EXPANDSVG)
+                                    .attr('height', (outputSize + 2 * p) * EXPANDSVG)
+                                layerShow.select('.outputSquare')
+                                    .transition()
+                                    .duration(Duration)
+                                    .attr('width', outputSize * EXPANDSVG)
+                                    .attr('height', outputSize * EXPANDSVG)
+                                changeNextInputSize(nodes[i].nextElementSibling)
+                            }
+                        })
+                    }
+                })
                 PytorchInitParagraph.append('span')
                     .text(', ')
                 const strideSize = filterSize
@@ -1053,6 +1576,52 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
                     .attr('value', d => d)
                     .html(d => d)
                     .property("selected", function(d){ return d === paddingSize; })
+                dropdownPadding.on('change', function(){
+                    const value = d3.select(this).property('value');
+                    let index;
+                    const nodes = this.parentNode.parentNode.children;
+                    for(index = 0; index < nodes.length; index++){
+                        if(nodes[index] === this.parentNode)
+                            break;
+                    }
+                    const currMode = d3.select('#Example').node().innerText;
+                    if(isMyModel){  // only change when example is used
+                        d3.selectAll('.newLayer').each(function(d,i, nodes){
+                            if(i === index){
+                                const select = d3.select(nodes[i]).select('.layerVis').select('.poolPadding')
+                                select.property("value", value);
+                                p = dropdownPadding.property('value')
+                                outputSize = Math.round((Number(PytorchInitParagraph.property('id')) + 2 * p - f) / s) + 1
+                                
+                                const layerVis = d3.select(nodes[i]).select('.layerVis')
+                                console.log("outputsize: " + outputSize)
+                                layerVis.select('.outputTextField').text(outputSize)
+                                const layerShow = layerVis.select('svg')
+                                layerShow.select('.padSquare')
+                                    .transition()
+                                    .duration(Duration)
+                                    .attr('width', (outputSize + 2 * p) * EXPANDSVG)
+                                    .attr('height', (outputSize + 2 * p) * EXPANDSVG)
+
+                                layerShow.select('.outputSquare')
+                                    .transition()
+                                    .duration(Duration)
+                                    .attr('x', p * EXPANDSVG)
+                                    .attr('y', p * EXPANDSVG)
+                                    .attr('width', outputSize * EXPANDSVG)
+                                    .attr('height', outputSize * EXPANDSVG)
+
+                                layerShow.select('.filterSquare')
+                                    .transition()
+                                    .duration(Duration)
+                                    .attr('x', p * EXPANDSVG)
+                                    .attr('y', p * EXPANDSVG)
+
+                                changeNextInputSize(nodes[i].nextElementSibling)
+                            }
+                        })
+                    }
+                })
                 PytorchInitParagraph.append('span')
                     .text(')')
                 
@@ -1060,6 +1629,9 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
                 PytorchForwardParagraph.append('span')
                     .html('&emsp;&emsp;x = self.pool' + numPool + '(x)')
                 numPool += 1;
+                let f = dropdownFilter.property('value')
+                let p = dropdownPadding.property('value')
+                let s = f
             } else if(layerName == layerNames[3]){
                 const outputSize = Math.pow(layerDiv.select('div').property('id'), 2) 
                     * channelCheck(layerDiv.node().previousElementSibling);
@@ -1081,6 +1653,8 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
             const layerDiv = d3.select(this)
             const layerName = layerDiv.select('.layerTitleBtn').node().innerText;
             const tensorflowLayer = tfSpace.append('p')
+                .attr('id', layerDiv.select('.layerVis').property('id'))
+            let outputSize;
             if(layerName == layerNames[0]){ //conv
                 tensorflowLayer.html('x = tf.layers.conv2d(x, ')
                 
@@ -1093,7 +1667,34 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
                     .attr('value', d => d)
                     .html(d => d)
                     .property("selected", function(d){ return d == channelSize; })
-                
+                dropdownChannel.on('change', function(){
+                    const value = d3.select(this).property('value');
+                    let index;
+                    const nodes = this.parentNode.parentNode.children;
+                    for(index = 0; index < nodes.length; index++){
+                        if(nodes[index] === this.parentNode)
+                            break;
+                    }
+                    const currMode = d3.select('#Example').node().innerText;
+                    if(isMyModel){  // only change when example is used
+                        d3.selectAll('.newLayer').each(function(d,i, nodes){
+                            if(i === index){
+                                const select = d3.select(nodes[i]).select('.layerVis').select('.convChannel')
+                                console.log(select.node());
+                                select.property("value", value);
+                                let layerDiv = nodes[i];
+                                console.log('layerDiv: ', layerDiv)
+                                while((layerDiv = layerDiv.nextElementSibling) != null){
+                                    if(layerDiv.classList.contains('newLayer') && 
+                                        d3.select(layerDiv).select('div > .layerTitleBtn').node().innerText == layerNames[0]){
+                                            d3.select(layerDiv).select('div > .chanIn').text('Ch in: ' + value)
+                                            return;
+                                    }
+                                }
+                            }
+                        })
+                    }
+                })
                 tensorflowLayer.append('span')
                     .text(', ')
 
@@ -1106,7 +1707,48 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
                     .attr('value', d => d)
                     .html(d => d)
                     .property("selected", function(d){ return d == filterSize; })
-                
+                    dropdownFilter.on('change', function(){
+                        const value = d3.select(this).property('value');
+                        let index;
+                        const nodes = this.parentNode.parentNode.children;
+                        for(index = 0; index < nodes.length; index++){
+                            if(nodes[index] === this.parentNode)
+                                break;
+                        }
+                        const currMode = d3.select('#Example').node().innerText;
+                        if(isMyModel){  // only change when example is used
+                            d3.selectAll('.newLayer').each(function(d,i, nodes){
+                                if(i === index){
+                                    const select = d3.select(nodes[i]).select('.layerVis').select('.convFilter')
+                                    console.log(select.node());
+                                    select.property("value", value);
+                                    f = dropdownFilter.property('value')
+                                    outputSize = Math.round((Number(tensorflowLayer.property('id')) + 2 * p - f) / s) + 1
+                                    console.log("s: " + s + ", p: " + p + ", f:" + f)
+                                    const layerVis = d3.select(nodes[i]).select('.layerVis')
+                                    console.log("outputsize: " +outputSize)
+                                    layerVis.select('.outputTextField').text(outputSize)
+                                    const layerShow = layerVis.select('svg')
+                                    layerShow.select('.filterSquare')
+                                        .transition()
+                                        .duration(Duration)
+                                        .attr('width', f * EXPANDSVG)
+                                        .attr('height', f * EXPANDSVG)
+                                    layerShow.select('.padSquare')
+                                        .transition()
+                                        .duration(Duration)
+                                        .attr('width', (outputSize + 2 * p) * EXPANDSVG)
+                                        .attr('height', (outputSize + 2 * p) * EXPANDSVG)
+                                    layerShow.select('.outputSquare')
+                                        .transition()
+                                        .duration(Duration)
+                                        .attr('width', outputSize * EXPANDSVG)
+                                        .attr('height', outputSize * EXPANDSVG)
+                                    changeNextInputSize(nodes[i].nextElementSibling)
+                                }
+                            })
+                        }
+                    })
                 tensorflowLayer.append('span')
                     .text(', ')
                 const strideSize = layerDiv.select('.convStride').property('value')
@@ -1118,6 +1760,44 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
                     .attr('value', d => d)
                     .html(d => d)
                     .property("selected", function(d){ return d == strideSize; })
+                dropdownStride.on('change', function(){
+                    const value = d3.select(this).property('value');
+                    let index;
+                    const nodes = this.parentNode.parentNode.children;
+                    for(index = 0; index < nodes.length; index++){
+                        if(nodes[index] === this.parentNode)
+                            break;
+                    }
+                    const currMode = d3.select('#Example').node().innerText;
+                    if(isMyModel){  // only change when example is used
+                        d3.selectAll('.newLayer').each(function(d,i, nodes){
+                            if(i === index){
+                                const select = d3.select(nodes[i]).select('.layerVis').select('.convStride')
+                                console.log(select.node());
+                                select.property("value", value);
+                                s = dropdownStride.property('value')
+                                outputSize = Math.round((Number(tensorflowLayer.property('id')) + 2 * p - f) / s) + 1
+                                console.log("s: " + s + ", p: " + p + ", f:" + f)
+                                const layerVis = d3.select(nodes[i]).select('.layerVis')
+                                console.log("outputsize: " +outputSize)
+                                layerVis.select('.outputTextField').text(outputSize)
+                                const layerShow = layerVis.select('svg')
+                                layerShow.select('.outputSquare')
+                                    .transition()
+                                    .duration(Duration)
+                                    .attr('width', outputSize * EXPANDSVG)
+                                    .attr('height', outputSize * EXPANDSVG)
+
+                                layerShow.select('.padSquare')
+                                    .transition()
+                                    .duration(Duration)
+                                    .attr('width', (outputSize + 2 * p) * EXPANDSVG)
+                                    .attr('height', (outputSize + 2 * p) * EXPANDSVG)
+                                changeNextInputSize(nodes[i].nextElementSibling)
+                            }
+                        })
+                    }
+                })
                 tensorflowLayer.append('span')
                     .text(', ')
                 const paddingSize = layerDiv.select('.convPadding').property('value')
@@ -1131,8 +1811,65 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
                     .property("selected", function(d, i){ 
                         return i == paddingSize; 
                     })
+                dropdownPadding.on('change', function(){
+                    const value = d3.select(this).property('value');
+                    let index;
+                    const nodes = this.parentNode.parentNode.children;
+                    for(index = 0; index < nodes.length; index++){
+                        if(nodes[index] === this.parentNode)
+                            break;
+                    }
+                    const currMode = d3.select('#Example').node().innerText;
+                    if(isMyModel){  // only change when example is used
+                        d3.selectAll('.newLayer').each(function(d,i, nodes){
+                            if(i === index){
+                                const select = d3.select(nodes[i]).select('.layerVis').select('.convPadding')
+                                p = 2;
+                                console.log(dropdownPadding.property('value'))
+                                tfPaddings.forEach(function(e, i){
+                                    if(dropdownPadding.property('value') === e){
+                                        p = i;
+                                        console.log(p);
+                                    }
+                                })
+                                select.property("value", p);
+                                outputSize = Math.round((Number(tensorflowLayer.property('id')) + 2 * p - f) / s) + 1
+                                
+                                const layerVis = d3.select(nodes[i]).select('.layerVis')
+                                console.log("outputsize: " +outputSize)
+                                layerVis.select('.outputTextField').text(outputSize)
+                                const layerShow = layerVis.select('svg')
+                                layerShow.select('.padSquare')
+                                    .transition()
+                                    .duration(Duration)
+                                    .attr('width', (outputSize + 2 * p) * EXPANDSVG)
+                                    .attr('height', (outputSize + 2 * p) * EXPANDSVG)
+
+                                layerShow.select('.outputSquare')
+                                    .transition()
+                                    .duration(Duration)
+                                    .attr('x', p * EXPANDSVG)
+                                    .attr('y', p * EXPANDSVG)
+                                    .attr('width', outputSize * EXPANDSVG)
+                                    .attr('height', outputSize * EXPANDSVG)
+
+                                layerShow.select('.filterSquare')
+                                    .transition()
+                                    .duration(Duration)
+                                    .attr('x', p * EXPANDSVG)
+                                    .attr('y', p * EXPANDSVG)
+
+                                changeNextInputSize(nodes[i].nextElementSibling)
+                            }
+                        })
+                    }
+                })
                 tensorflowLayer.append('span')
                     .text(')')
+                    
+                let f = dropdownFilter.property('value')
+                let p = dropdownPadding.property('value')
+                let s = dropdownStride.property('value')
             } else if(layerName == layerNames[1]){
                 const activation = layerDiv.select('.activationLayer').property('value')
                 tensorflowLayer.append('span')
@@ -1145,6 +1882,27 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
                     .attr('value', d => d)
                     .html(d => d.toLowerCase())
                     .property("selected", function(d){ return d == activation; })
+                dropdownActivation.on('change', function(){
+                    const currMode = d3.select('#Example').node().innerText;
+                    if(isMyModel){  // only change when example is used
+                        const value = d3.select(this).property('value');
+                        let index;
+                        const nodes = this.parentNode.parentNode.children;
+                        for(index = 0; index < nodes.length; index++){
+                            if(nodes[index] === this.parentNode)
+                                break;
+                        }
+                        d3.selectAll('.newLayer').each(function(d,i, nodes){
+                            if(i === index){
+                                const layerVis = d3.select(nodes[i]).select('.layerVis')
+                                const select = layerVis.select('.activationLayer')
+                                select.property("value", value);
+                                const layerShow = layerVis.select('img')
+                                layerShow.attr('src', '/images/' + value + '.png')
+                            }
+                        })
+                    }
+                })
                 tensorflowLayer.append('span')
                     .text('(x)')
                     
@@ -1155,12 +1913,54 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
                 const dropdownFilter = tensorflowLayer.append('select')
                     .attr('class', 'poolFilterCode')
                     .attr('title', 'kernel(filter) size')
-                dropdownFilter.selectAll('option').data(filterSizes)
+                dropdownFilter.selectAll('option').data(poolSizes)
                     .enter().append('option')
                     .attr('value', d => d)
                     .html(d => d)
                     .property("selected", function(d){ return d === filterSize; })
-                
+                dropdownFilter.on('change', function(){
+                    const value = d3.select(this).property('value');
+                    let index;
+                    const nodes = this.parentNode.parentNode.children;
+                    for(index = 0; index < nodes.length; index++){
+                        if(nodes[index] === this.parentNode)
+                            break;
+                    }
+                    const currMode = d3.select('#Example').node().innerText;
+                    if(isMyModel){  // only change when example is used
+                        d3.selectAll('.newLayer').each(function(d,i, nodes){
+                            if(i === index){
+                                const select = d3.select(nodes[i]).select('.layerVis').select('.poolFilter')
+                                console.log(select.node());
+                                select.property("value", value);
+                                f = dropdownFilter.property('value')
+                                s = f
+                                outputSize = Math.round((Number(tensorflowLayer.property('id')) + 2 * p - f) / s) + 1
+                                console.log("s: " + s + ", p: " + p + ", f:" + f)
+                                const layerVis = d3.select(nodes[i]).select('.layerVis')
+                                console.log("outputsize: " +outputSize)
+                                layerVis.select('.outputTextField').text(outputSize)
+                                const layerShow = layerVis.select('svg')
+                                layerShow.select('.filterSquare')
+                                    .transition()
+                                    .duration(Duration)
+                                    .attr('width', f * EXPANDSVG)
+                                    .attr('height', f * EXPANDSVG)
+                                layerShow.select('.padSquare')
+                                    .transition()
+                                    .duration(Duration)
+                                    .attr('width', (outputSize + 2 * p) * EXPANDSVG)
+                                    .attr('height', (outputSize + 2 * p) * EXPANDSVG)
+                                layerShow.select('.outputSquare')
+                                    .transition()
+                                    .duration(Duration)
+                                    .attr('width', outputSize * EXPANDSVG)
+                                    .attr('height', outputSize * EXPANDSVG)
+                                changeNextInputSize(nodes[i].nextElementSibling)
+                            }
+                        })
+                    }
+                })
                 tensorflowLayer.append('span')
                     .text(', ')
                 const strideSize = filterSize
@@ -1181,13 +1981,65 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
                     .property("selected", function(d, i){ 
                         return i == paddingSize; 
                     })
+                dropdownPadding.on('change', function(){
+                    const value = d3.select(this).property('value');
+                    let index;
+                    const nodes = this.parentNode.parentNode.children;
+                    for(index = 0; index < nodes.length; index++){
+                        if(nodes[index] === this.parentNode)
+                            break;
+                    }
+                    const currMode = d3.select('#Example').node().innerText;
+                    if(isMyModel){  // only change when example is used
+                        d3.selectAll('.newLayer').each(function(d,i, nodes){
+                            if(i === index){
+                                const select = d3.select(nodes[i]).select('.layerVis').select('.poolPadding')
+                                p = 2;
+                                tfPaddings.forEach(function(e, i){
+                                    if(dropdownPadding.property('value') === e)
+                                        p = i;
+                                })
+                                select.property("value", p);
+                                outputSize = Math.round((Number(tensorflowLayer.property('id')) + 2 * p - f) / s) + 1
+                                
+                                const layerVis = d3.select(nodes[i]).select('.layerVis')
+                                console.log("outputsize: " +outputSize)
+                                layerVis.select('.outputTextField').text(outputSize)
+                                const layerShow = layerVis.select('svg')
+                                layerShow.select('.padSquare')
+                                    .transition()
+                                    .duration(Duration)
+                                    .attr('width', (outputSize + 2 * p) * EXPANDSVG)
+                                    .attr('height', (outputSize + 2 * p) * EXPANDSVG)
+
+                                layerShow.select('.outputSquare')
+                                    .transition()
+                                    .duration(Duration)
+                                    .attr('x', p * EXPANDSVG)
+                                    .attr('y', p * EXPANDSVG)
+                                    .attr('width', outputSize * EXPANDSVG)
+                                    .attr('height', outputSize * EXPANDSVG)
+
+                                layerShow.select('.filterSquare')
+                                    .transition()
+                                    .duration(Duration)
+                                    .attr('x', p * EXPANDSVG)
+                                    .attr('y', p * EXPANDSVG)
+
+                                changeNextInputSize(nodes[i].nextElementSibling)
+                            }
+                        })
+                    }
+                })
                 tensorflowLayer.append('span')
                     .text(')')
                 
+                let f = dropdownFilter.property('value')
+                let p = dropdownPadding.property('value')
+                let s = f
             } else if(layerName == layerNames[3]){
                 tensorflowLayer.append('span')
                     .html('x = tf.layers.flatten(x)<br>')
-                
                 tensorflowLayer.append('span')
                     .html('logits = tf.layers.dense(x, 10)')
             }
@@ -1201,6 +2053,8 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
             const layerName = layerDiv.select('.layerTitleBtn').node().innerText;
             console.log('layerName: ' + layerName);
             const kerasLayer = kerasSpace.append('p')
+                .attr('id', layerDiv.select('.layerVis').property('id'))
+            let outputSize;
             if(layerName == layerNames[0]){ //conv
                 kerasLayer.append('span').text('model.add(layers.Conv2D(')
                 
@@ -1213,7 +2067,34 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
                     .attr('value', d => d)
                     .html(d => d)
                     .property("selected", function(d){ return d == channelSize; })
-                
+                dropdownChannel.on('change', function(){
+                    const value = d3.select(this).property('value');
+                    let index;
+                    const nodes = this.parentNode.parentNode.children;
+                    for(index = 0; index < nodes.length; index++){
+                        if(nodes[index] === this.parentNode)
+                            break;
+                    }
+                    const currMode = d3.select('#Example').node().innerText;
+                    if(isMyModel){  // only change when example is used
+                        d3.selectAll('.newLayer').each(function(d,i, nodes){
+                            if(i === index){
+                                const select = d3.select(nodes[i]).select('.layerVis').select('.convChannel')
+                                console.log(select.node());
+                                select.property("value", value);
+                                let layerDiv = nodes[i];
+                                console.log('layerDiv: ', layerDiv)
+                                while((layerDiv = layerDiv.nextElementSibling) != null){
+                                    if(layerDiv.classList.contains('newLayer') && 
+                                        d3.select(layerDiv).select('div > .layerTitleBtn').node().innerText == layerNames[0]){
+                                            d3.select(layerDiv).select('div > .chanIn').text('Ch in: ' + value)
+                                            return;
+                                    }
+                                }
+                            }
+                        })
+                    }
+                })
                 kerasLayer.append('span')
                     .text(', ')
 
@@ -1226,7 +2107,53 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
                     .attr('value', d => d)
                     .html(d => d)
                     .property("selected", function(d){ return d == filterSize; })
-                
+                    dropdownFilter.selectAll('option').data(filterSizes)
+                    .enter().append('option')
+                    .attr('value', d => d)
+                    .html(d => d)
+                    .property("selected", function(d){ return d == filterSize; })
+                dropdownFilter.on('change', function(){
+                    const value = d3.select(this).property('value');
+                    let index;
+                    const nodes = this.parentNode.parentNode.children;
+                    for(index = 0; index < nodes.length; index++){
+                        if(nodes[index] === this.parentNode)
+                            break;
+                    }
+                    const currMode = d3.select('#Example').node().innerText;
+                    if(isMyModel){  // only change when example is used
+                        d3.selectAll('.newLayer').each(function(d,i, nodes){
+                            if(i === index){
+                                const select = d3.select(nodes[i]).select('.layerVis').select('.convFilter')
+                                console.log(select.node());
+                                select.property("value", value);
+                                f = dropdownFilter.property('value')
+                                outputSize = Math.round((Number(kerasLayer.property('id')) + 2 * p - f) / s) + 1
+                                console.log("s: " + s + ", p: " + p + ", f:" + f)
+                                const layerVis = d3.select(nodes[i]).select('.layerVis')
+                                console.log("outputsize: " +outputSize)
+                                layerVis.select('.outputTextField').text(outputSize)
+                                const layerShow = layerVis.select('svg')
+                                layerShow.select('.filterSquare')
+                                    .transition()
+                                    .duration(Duration)
+                                    .attr('width', f * EXPANDSVG)
+                                    .attr('height', f * EXPANDSVG)
+                                layerShow.select('.padSquare')
+                                    .transition()
+                                    .duration(Duration)
+                                    .attr('width', (outputSize + 2 * p) * EXPANDSVG)
+                                    .attr('height', (outputSize + 2 * p) * EXPANDSVG)
+                                layerShow.select('.outputSquare')
+                                    .transition()
+                                    .duration(Duration)
+                                    .attr('width', outputSize * EXPANDSVG)
+                                    .attr('height', outputSize * EXPANDSVG)
+                                changeNextInputSize(nodes[i].nextElementSibling)
+                            }
+                        })
+                    }
+                })
                 kerasLayer.append('span')
                     .text(', ')
                 const strideSize = layerDiv.select('.convStride').property('value')
@@ -1238,6 +2165,44 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
                     .attr('value', d => d)
                     .html(d => d)
                     .property("selected", function(d){ return d == strideSize; })
+                dropdownStride.on('change', function(){
+                    const value = d3.select(this).property('value');
+                    let index;
+                    const nodes = this.parentNode.parentNode.children;
+                    for(index = 0; index < nodes.length; index++){
+                        if(nodes[index] === this.parentNode)
+                            break;
+                    }
+                    const currMode = d3.select('#Example').node().innerText;
+                    if(isMyModel){  // only change when example is used
+                        d3.selectAll('.newLayer').each(function(d,i, nodes){
+                            if(i === index){
+                                const select = d3.select(nodes[i]).select('.layerVis').select('.convStride')
+                                console.log(select.node());
+                                select.property("value", value);
+                                s = dropdownStride.property('value')
+                                outputSize = Math.round((Number(kerasLayer.property('id')) + 2 * p - f) / s) + 1
+                                console.log("s: " + s + ", p: " + p + ", f:" + f)
+                                const layerVis = d3.select(nodes[i]).select('.layerVis')
+                                console.log("outputsize: " +outputSize)
+                                layerVis.select('.outputTextField').text(outputSize)
+                                const layerShow = layerVis.select('svg')
+                                layerShow.select('.outputSquare')
+                                    .transition()
+                                    .duration(Duration)
+                                    .attr('width', outputSize * EXPANDSVG)
+                                    .attr('height', outputSize * EXPANDSVG)
+
+                                layerShow.select('.padSquare')
+                                    .transition()
+                                    .duration(Duration)
+                                    .attr('width', (outputSize + 2 * p) * EXPANDSVG)
+                                    .attr('height', (outputSize + 2 * p) * EXPANDSVG)
+                                changeNextInputSize(nodes[i].nextElementSibling)
+                            }
+                        })
+                    }
+                })
                 kerasLayer.append('span')
                     .text(', ')
                 const paddingSize = layerDiv.select('.convPadding').property('value')
@@ -1251,11 +2216,64 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
                     .property("selected", function(d, i){ 
                         return i == paddingSize; 
                     })
+                dropdownPadding.on('change', function(){
+                    const value = d3.select(this).property('value');
+                    let index;
+                    const nodes = this.parentNode.parentNode.children;
+                    for(index = 0; index < nodes.length; index++){
+                        if(nodes[index] === this.parentNode)
+                            break;
+                    }
+                    const currMode = d3.select('#Example').node().innerText;
+                    if(isMyModel){  // only change when example is used
+                        d3.selectAll('.newLayer').each(function(d,i, nodes){
+                            if(i === index){
+                                const select = d3.select(nodes[i]).select('.layerVis').select('.convPadding')
+                                p = 2;
+                                tfPaddings.forEach(function(e, i){
+                                    if(dropdownPadding.property('value') === e)
+                                        p = i;
+                                })
+                                select.property("value", p);
+                                outputSize = Math.round((Number(kerasLayer.property('id')) + 2 * p - f) / s) + 1
+                                
+                                const layerVis = d3.select(nodes[i]).select('.layerVis')
+                                layerVis.select('.outputTextField').text(outputSize)
+                                const layerShow = layerVis.select('svg')
+                                layerShow.select('.padSquare')
+                                    .transition()
+                                    .duration(Duration)
+                                    .attr('width', (outputSize + 2 * p) * EXPANDSVG)
+                                    .attr('height', (outputSize + 2 * p) * EXPANDSVG)
+
+                                layerShow.select('.outputSquare')
+                                    .transition()
+                                    .duration(Duration)
+                                    .attr('x', p * EXPANDSVG)
+                                    .attr('y', p * EXPANDSVG)
+                                    .attr('width', outputSize * EXPANDSVG)
+                                    .attr('height', outputSize * EXPANDSVG)
+
+                                layerShow.select('.filterSquare')
+                                    .transition()
+                                    .duration(Duration)
+                                    .attr('x', p * EXPANDSVG)
+                                    .attr('y', p * EXPANDSVG)
+
+                                changeNextInputSize(nodes[i].nextElementSibling)
+                            }
+                        })
+                    }
+                })
                 if(i < 1){
                     kerasLayer.append('span').text(', input_shape = (28, 28, 1)')
                 }
                 kerasLayer.append('span')
                     .text('))')
+                    
+                let f = dropdownFilter.property('value')
+                let p = dropdownPadding.property('value')
+                let s = dropdownStride.property('value')
             } else if(layerName == layerNames[1]){
                 const activation = layerDiv.select('.activationLayer').property('value')
                 kerasLayer.append('span')
@@ -1268,6 +2286,27 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
                     .attr('value', d => d)
                     .html(d => d)
                     .property("selected", function(d){ return d == activation; })
+                dropdownActivation.on('change', function(){
+                    const currMode = d3.select('#Example').node().innerText;
+                    if(isMyModel){  // only change when example is used
+                        const value = d3.select(this).property('value');
+                        let index;
+                        const nodes = this.parentNode.parentNode.children;
+                        for(index = 0; index < nodes.length; index++){
+                            if(nodes[index] === this.parentNode)
+                                break;
+                        }
+                        d3.selectAll('.newLayer').each(function(d,i, nodes){
+                            if(i === index){
+                                const layerVis = d3.select(nodes[i]).select('.layerVis')
+                                const select = layerVis.select('.activationLayer')
+                                select.property("value", value);
+                                const layerShow = layerVis.select('img')
+                                layerShow.attr('src', '/images/' + value + '.png')
+                            }
+                        })
+                    }
+                })
                 kerasLayer.append('span')
                     .text('")')
                     
@@ -1283,11 +2322,52 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
                     .attr('value', d => d)
                     .html(d => d)
                     .property("selected", function(d){ return d === filterSize; })
-                
+                dropdownFilter.on('change', function(){
+                    const value = d3.select(this).property('value');
+                    let index;
+                    const nodes = this.parentNode.parentNode.children;
+                    for(index = 0; index < nodes.length; index++){
+                        if(nodes[index] === this.parentNode)
+                            break;
+                    }
+                    const currMode = d3.select('#Example').node().innerText;
+                    if(isMyModel){  // only change when example is used
+                        d3.selectAll('.newLayer').each(function(d,i, nodes){
+                            if(i === index){
+                                const select = d3.select(nodes[i]).select('.layerVis').select('.poolFilter')
+                                console.log(select.node());
+                                select.property("value", value);
+                                f = dropdownFilter.property('value')
+                                outputSize = Math.round((Number(kerasLayer.property('id')) + 2 * p - f) / s) + 1
+                                console.log("s: " + s + ", p: " + p + ", f:" + f)
+                                const layerVis = d3.select(nodes[i]).select('.layerVis')
+                                console.log("outputsize: " +outputSize)
+                                layerVis.select('.outputTextField').text(outputSize)
+                                const layerShow = layerVis.select('svg')
+                                layerShow.select('.filterSquare')
+                                    .transition()
+                                    .duration(Duration)
+                                    .attr('width', f * EXPANDSVG)
+                                    .attr('height', f * EXPANDSVG)
+                                layerShow.select('.padSquare')
+                                    .transition()
+                                    .duration(Duration)
+                                    .attr('width', (outputSize + 2 * p) * EXPANDSVG)
+                                    .attr('height', (outputSize + 2 * p) * EXPANDSVG)
+                                layerShow.select('.outputSquare')
+                                    .transition()
+                                    .duration(Duration)
+                                    .attr('width', outputSize * EXPANDSVG)
+                                    .attr('height', outputSize * EXPANDSVG)
+                                changeNextInputSize(nodes[i].nextElementSibling)
+                            }
+                        })
+                    }
+                })
                 kerasLayer.append('span')
                     .text(', ')
                 const strideSize = filterSize
-                const dropdownStride = kerasLayer.append('span')
+                kerasLayer.append('span')
                 .attr('class', 'poolStrideCode')
                 .attr('title', 'stride size(same as kernel size)')
                 .text(strideSize)
@@ -1304,18 +2384,73 @@ const chooseLib = d3.selectAll('.library').on('click', function(){
                     .property("selected", function(d, i){ 
                         return i == paddingSize; 
                     })
+                dropdownPadding.on('change', function(){
+                    const value = d3.select(this).property('value');
+                    let index;
+                    const nodes = this.parentNode.parentNode.children;
+                    for(index = 0; index < nodes.length; index++){
+                        if(nodes[index] === this.parentNode)
+                            break;
+                    }
+                    const currMode = d3.select('#Example').node().innerText;
+                    if(isMyModel){  // only change when example is used
+                        d3.selectAll('.newLayer').each(function(d,i, nodes){
+                            if(i === index){
+                                const select = d3.select(nodes[i]).select('.layerVis').select('.poolPadding')
+                                p = 2;
+                                tfPaddings.forEach(function(e, i){
+                                    if(dropdownPadding.property('value') === e)
+                                        p = i;
+                                })
+                                select.property("value", p);
+                                outputSize = Math.round((Number(kerasLayer.property('id')) + 2 * p - f) / s) + 1
+                                
+                                const layerVis = d3.select(nodes[i]).select('.layerVis')
+                                console.log("outputsize: " +outputSize)
+                                layerVis.select('.outputTextField').text(outputSize)
+                                const layerShow = layerVis.select('svg')
+                                layerShow.select('.padSquare')
+                                    .transition()
+                                    .duration(Duration)
+                                    .attr('width', (outputSize + 2 * p) * EXPANDSVG)
+                                    .attr('height', (outputSize + 2 * p) * EXPANDSVG)
+
+                                layerShow.select('.outputSquare')
+                                    .transition()
+                                    .duration(Duration)
+                                    .attr('x', p * EXPANDSVG)
+                                    .attr('y', p * EXPANDSVG)
+                                    .attr('width', outputSize * EXPANDSVG)
+                                    .attr('height', outputSize * EXPANDSVG)
+
+                                layerShow.select('.filterSquare')
+                                    .transition()
+                                    .duration(Duration)
+                                    .attr('x', p * EXPANDSVG)
+                                    .attr('y', p * EXPANDSVG)
+
+                                changeNextInputSize(nodes[i].nextElementSibling)
+                            }
+                        })
+                    }
+                })
                 kerasLayer.append('span')
                     .text('))')
                 
+                let f = dropdownFilter.property('value')
+                let p = dropdownPadding.property('value')
+                let s = f
             } else if(layerName == layerNames[3]){
                 kerasLayer.append('span')
                     .html('model.add(layers.Flatten())<br>')
-                
                 kerasLayer.append('span')
                     .html('model.add(layers.Dense(10))')
             }
 
         })
+    }
+    if(!isMyModel){
+        d3.select('.codeSpace').selectAll('select').property('disabled', true)
     }
 })
 
@@ -1356,23 +2491,24 @@ function sleep(ms) {
 async function run() {  
     const data = new MnistData();
     await data.load();
-    //   await showExamples(data);
 
     const model = getModel();
-    tfvis.show.modelSummary({name: 'Model Architecture'}, model);
-    d3.select('.tf-surface')
-        .style('visibility', 'hidden')
-        .style('height', '0')
-    let oldParent = document.getElementById('tfjs-visor-container');
-    let newParent = document.getElementById('resultSpace');
-    newParent.appendChild(oldParent);
+    // tfvis.show.modelSummary({name: 'Model Architecture'}, model);
+    // d3.select('.tf-surface')
+    //     .style('visibility', 'hidden')
+    //     .style('height', '0')
+    // let oldParent = document.getElementById('tfjs-visor-container');
+    // let newParent = document.getElementById('resultSpace');
+    // newParent.appendChild(oldParent);
     await train(model, data);
-
-//   await showAccuracy(model, data);
 }  
+// const metrics = ['acc'];
+// const container = {
+//     name: 'Train Result'
+// };
 const EPOCH = 20;
 let history = [];
-let old_history = [];
+// let old_history = [];
   // Model
 function getModel() {
     const model = tf.sequential();
@@ -1464,10 +2600,6 @@ function getModel() {
 
     // Training
     async function train(model, data) {
-    const metrics = ['acc'];
-    const container = {
-        name: 'Train Result'
-    };
     
     let BATCH_SIZE = Number(d3.select('#batchSize').property('value'));
     console.log('batch size: ', BATCH_SIZE);
@@ -1507,16 +2639,17 @@ function getModel() {
                     d3.select('#epochCurr')
                         .transition()
                         .duration(Duration)
-                        .text(++epochCurr)
-                    if(epoch + 1 === EPOCH){
+                        .text(epochCurr++)
+                    if(epochCurr === EPOCH){
                         d3.select('#play').html('<i class="fas fa-play-circle fa-3x"></i>')
-                        d3.select('.modelSpace').selectAll('button').property('disabled', true)
-                        d3.select('.modelSpace').selectAll('select').property('disabled', true)
-                        d3.select('.betweenSpaces').selectAll('select').property('disabled', true)
-                        d3.select('.codeSpace').selectAll('select').property('disabled', true)
+                        d3.select('.modelSpace').selectAll('button').property('disabled', false)
+                        d3.select('.modelSpace').selectAll('select').property('disabled', false)
+                        d3.select('.betweenSpaces').selectAll('select').property('disabled', false)
+                        d3.select('.codeSpace').selectAll('select').property('disabled', false)
                         stopLearning = false;
                         pauseLearning = false;
-                        old_history = history;
+                        // old_history = history;
+                        epochCurr = 0;
                     }
                 }
             }

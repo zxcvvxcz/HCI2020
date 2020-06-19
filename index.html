@@ -28,7 +28,7 @@
     <div class="btnTop">
         <button class='btnLearning' id='play'><i class="fas fa-play-circle fa-3x"></i></button>
         <button class='btnLearning' id='stop'><i class="fas fa-stop-circle fa-3x"></i></button>
-        <span id='epoch'>Epoch : <span id='epochCurr'>0</span></span>
+        <span id='epoch'>Epoch : <span id='epochCurr'>0</span> / 20</span>
         <!-- <button class='btnSaveLoad' id='savePy'>Save .py</button> -->
         <button class='btnSaveLoad' id='Example'>Example</button>
     </div>
@@ -295,7 +295,7 @@
                 <p> # Normalizing the images to the range of [0., 1.]<br>
                     train_images /= 255.<br>
                     test_images /= 255.</p>
-                    <p>batch_size = <span class = '.batchSize'>128</span></p>
+                    <p>batch_size = <span class = 'batchSize'>128</span></p>
 
                     <p>graph = tf.Graph() <br>
                         with graph.as_default():  
@@ -333,7 +333,7 @@
                 <p> # Normalizing the images to the range of [0., 1.]<br>
                     train_images /= 255.<br>
                     test_images /= 255.</p>
-                    <p>batch_size = <span class = '.batchSize'>128</span></p>
+                    <p>batch_size = <span class = 'batchSize'>128</span></p>
 
                 <p>graph = tf.Graph() <br>
                     with graph.as_default():  
@@ -355,19 +355,18 @@
         </div>
         
         <div class='codeArea' id='modelCodeArea'>
-            <div class='PytorchArea' id='modelPytorchArea'>
+            <div class='PytorchArea currLib' id='modelPytorchArea'>
                 <p>import torch.nn as nn</p>
                 <p>class Net(nn.Module):</p>
-                <div id='__init__' title = 'define layers to use'></div>
                 <p>&emsp;def __init__(self):</p>
                 <p>&emsp;&emsp;super(Net, self).__init__()</p>
+                <div id='__init__' title = 'define layers to use'></div>
                 <p>&emsp;def forward(self, x):</p>
                 <div id='forward' title = 'connect layers'></div>
                 <p>&emsp;&emsp;return x</p>
                 <p>net = Net()</p>
             </div>
             <div class='tensorflowArea' id='modeltensorflowArea' style='display:none'>
-
             </div>
             <div class='kerasArea' id='modelkerasArea' style='display:none'>
                 <p>import tensorflow as tf <br>
@@ -380,7 +379,7 @@
                 <p># loss</p>
                 <p>criterion = nn.CrossEntropyLoss()</p>
                 <p># backpropagation method</p>
-                <p>optimizer = optim.SGD(net.parameters(), lr=<span class='learningRate' title = 'learning rate'>learning_rate</span>,
+                <p>optimizer = optim.SGD(net.parameters(), lr=<span class='learningRate' title = 'learning rate'>0.001</span>,
                     momentum = <span class = 'momentum' title = 'momentum'>0.9</span>)</p>
                 <p># hyper-parameters</p>
                 <p>num_epochs = <span class='epoch'></span></p>
@@ -391,7 +390,7 @@
 
                 <p>&emsp;loss = tf.reduce_mean(tf.losses.sparse_softmax_cross_entropy(logits=logits, labels=y))  <br>
                     &emsp;train_op = tf.train.MomentumOptimizer(
-                        <span class='learningRate' title = 'learning rate'>learning_rate</span>, 
+                        <span class='learningRate' title = 'learning rate'>0.001</span>, 
                         <span class = 'momentum' title = 'momentum'>0.9</span>, 
                         use_locking=False, name='Momentum', use_nesterov=False
                     ) <br>
@@ -431,11 +430,11 @@
                 <p> &emsp;print('Test accuracy = {:2.4f}'.format(total_corrects / 10000))</p>
             </div>
             <div class='kerasArea' id='resultkerasArea' style='display:none'>
-                <p>model.compile(optimizer=keras.optimizers.SGD(<span class='learningRate' title = 'learning rate'>0.01</span>, 
+                <p>model.compile(optimizer=keras.optimizers.SGD(<span class='learningRate' title = 'learning rate'>0.001</span>, 
                     <span title = 'momentum' class = 'momentum'>0.9</span>),  <br>
                     &emsp;loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),  <br>
                     &emsp;metrics=['accuracy'])</p>
-                <p>model.fit(train_images, train_labels, epochs=10, batch_size=128)</p>
+                <p>model.fit(train_images, train_labels, epochs=20, batch_size=<span class = 'batchSize'>128</span>)</p>
                 <p>test_loss, test_acc = model.evaluate(test_images, test_labels, verbose=2)</p>
                 <p>print('Test accuracy:', test_acc)</p>
             </div>
