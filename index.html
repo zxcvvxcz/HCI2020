@@ -1,3 +1,6 @@
+<!-- 2014-17082 박충현
+2015-15356 이준희 -->
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -11,12 +14,6 @@
     <!-- Import tfjs-vis -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis@1.0.2/dist/tfjs-vis.umd.min.js"></script>
 
-    <!-- Import the data file -->
-    <!-- <script src="data.js" type="module"></script> -->
-
-    <!-- Import the main script file -->
-    <!-- <script src="script.js" type="module"></script> -->
-
     <script src="https://d3js.org/d3.v5.min.js"></script>
     <script src="d3_main.js" type='module'></script>
     <!-- Import font awesome 5 for icons -->
@@ -29,7 +26,6 @@
         <button class='btnLearning' id='play'><i class="fas fa-play-circle fa-3x"></i></button>
         <button class='btnLearning' id='stop'><i class="fas fa-stop-circle fa-3x"></i></button>
         <span id='epoch'>Epoch : <span id='epochCurr'>0</span> / 20</span>
-        <!-- <button class='btnSaveLoad' id='savePy'>Save .py</button> -->
         <button class='btnSaveLoad' id='Example'>Example</button>
     </div>
     <div class="modelSpace">
@@ -53,7 +49,6 @@
                 </select>
                 <br>
                 <br>
-                <!-- <label for='trainData'> Training data<br/>:</label> -->
             </form>
         </div>
         <div class='visSpace'>
@@ -66,15 +61,9 @@
             </div>
             <div class="exampleGroup" style='visibility: hidden;'>
                 <div class="addLayerDiv" style="border: none;">
-                    <!-- <button class="addBtn" id="addBtn0" value="0" >
-                        <i class="fas fa-plus-circle fa"></i>
-                    </button> -->
                 </div>
                 <div class="addLayerDiv newLayer" style="border: none;">
                     <div class="layerVis Conv" id="28">
-                        <!-- <button class="closeBtn" >
-                                            <i class="fas fa-window-close fa"></i>
-                                        </button> -->
                         <button class="layerTitleBtn" style="float: left;" >Conv</button>
                         <svg width="90" height="90">
                             <rect x="0" y="0" width="84" height="84" class="entireSquare"></rect>
@@ -113,15 +102,9 @@
                         <label style="float: left;">Output: </label>
                         <text class="outputTextField">28</text>
                     </div>
-                    <!-- <button class="addBtn" id="addBtn2" value="2" >
-                                        <i class="fas fa-plus-circle fa"></i>
-                                    </button> -->
                 </div>
                 <div class="addLayerDiv newLayer" style="border: none;">
                     <div class="layerVis Acti" id="28">
-                        <!-- <button class="closeBtn" >
-                                <i class="fas fa-window-close fa"></i>
-                            </button> -->
                         <button class="layerTitleBtn" style="float: left;" >Acti</button>
                         <img width="90" height="90" src="/images/ReLU.png">
                         <label class="input" style="float: left;">Input: 28</label>
@@ -134,15 +117,9 @@
                         <label style="float: left;">Output: </label>
                         <text class="outputTextField">28</text>
                     </div>
-                    <!-- <button class="addBtn" id="addBtn3" value="3" >
-                            <i class="fas fa-plus-circle fa"></i>
-                        </button> -->
                 </div>
                 <div class="addLayerDiv newLayer" style="border: none;">
                     <div class="layerVis Pool" id="28">
-                        <!-- <button class="closeBtn" >
-                                <i class="fas fa-window-close fa"></i>
-                            </button> -->
                         <button class="layerTitleBtn" style="float: left;" >Pool</button>
                         <svg width="90" height="90">
                             <rect x="0" y="0" width="84" height="84" class="entireSquare"></rect>
@@ -167,30 +144,18 @@
                         <label style="float: left;">Output: </label>
                         <text class="outputTextField">14</text>
                     </div>
-                    <!-- <button class="addBtn" id="addBtn4" value="4" >
-                            <i class="fas fa-plus-circle fa"></i>
-                        </button> -->
                 </div>
                 <div class="addLayerDiv newLayer" style="border: none;">
                     <div class="layerVis Linear" id="14">
-                        <!-- <button class="closeBtn" >
-                                <i class="fas fa-window-close fa"></i>
-                            </button> -->
-                        <button class="layerTitleBtn" style="float: left;" >Linear</button>
-                        <img width="90" height="90" src="/images/linear.png">
+                        <button class="layerTitleBtn" style="float: left;" >Dense</button>
+                        <img width="90" height="90" src="/images/dense.png">
                         <label class="input">Input: 14</label>
                         <label style="float: left;">Output: </label>
                         <text class="outputTextField">10</text>
                     </div>
-                    <!-- <button class="addBtn" id="addBtn5" value="5" >
-                        <i class="fas fa-plus-circle fa"></i>
-                    </button> -->
                 </div>
                 <div class="addLayerDiv newLayer" style="border: none;">
                     <div class="layerVis Acti" id="10">
-                        <!-- <button class="closeBtn" >
-                                <i class="fas fa-window-close fa"></i>
-                            </button> -->
                         <button class="layerTitleBtn" style="float: left;" >Acti</button>
                         <img width="90" height="90" src="/images/Sigmoid.png">
                         <label class="input" style="float: left;">Input: 10</label>
@@ -203,17 +168,12 @@
                         <label style="float: left;">Output: </label>
                         <text class="outputTextField">10</text>
                     </div>
-                    <!-- <button class="addBtn" id="addBtn6" value="6" >
-                            <i class="fas fa-plus-circle fa"></i>
-                        </button> -->
                 </div>
             </div>
 
 
         </div>
         <div class='resultSpace' id='resultSpace'></div>
-        <!-- <svg class = 'model'></svg>
-            <svg class = 'result'></svg> -->
     </div>
     <div class='betweenSpaces'>
         <label for="learningRate" title = 'learning rate'>Learning rate : </label>
@@ -315,6 +275,7 @@
                         &emsp;test_init = iterator.make_initializer(test_ds)</p>
             </div>
             <div class='kerasArea' id='preprocesskerasArea' style='display:none'>
+                <p># Same as tensorflow</p>
                 <p>import tensorflow.compat.v1 as tf<br>
                     tf.disable_v2_behavior()</p>
     
@@ -382,8 +343,42 @@
                 <p>optimizer = optim.SGD(net.parameters(), lr=<span class='learningRate' title = 'learning rate'>0.001</span>,
                     momentum = <span class = 'momentum' title = 'momentum'>0.9</span>)</p>
                 <p># hyper-parameters</p>
-                <p>num_epochs = <span class='epoch'></span></p>
+                <p>num_epochs = <span class='epoch'>20</span></p>
                 <p>num_batches = len(trn_loader)</p>
+                <p>trn_loss_list = [] <br>
+                    val_loss_list = [] <br>
+                    for epoch in range(num_epochs): <br>
+                    &emsp;trn_loss = 0.0 <br>
+                    &emsp;for i, data in enumerate(trn_loader): <br>
+                    &emsp;&emsp;x, label = data <br>
+                    &emsp;&emsp;# grad init <br>
+                    &emsp;&emsp;optimizer.zero_grad() <br>
+                    &emsp;&emsp;# forward propagation <br>
+                    &emsp;&emsp;model_output = net(x) <br>
+                    &emsp;&emsp;# calculate loss <br>
+                    &emsp;&emsp;loss = criterion(model_output, label) <br>
+                    &emsp;&emsp;# back propagation <br>
+                    &emsp;&emsp;loss.backward() <br>
+                    &emsp;&emsp;# weight update <br>
+                    &emsp;&emsp;optimizer.step() <br><br>
+                    &emsp;&emsp;# trn_loss summary <br>
+                    &emsp;&emsp;trn_loss += loss.item() <br>
+                    &emsp;&emsp;# del (memory issue) <br>
+                    &emsp;&emsp;del loss <br>
+                    &emsp;&emsp;del model_output  <br><br>
+                    &emsp;&emsp;# &#54617;&#49845;&#44284;&#51221; &#52636;&#47141; <br>
+                    &emsp;&emsp;if (i+1) % 100 == 0: # every 100 mini-batches <br>
+                    &emsp;&emsp;&emsp;with torch.no_grad(): # very very very very important!!! <br>
+                    &emsp;&emsp;&emsp;&emsp;val_loss = 0.0 <br>
+                    &emsp;&emsp;&emsp;&emsp;for j, val in enumerate(val_loader): <br>
+                    &emsp;&emsp;&emsp;&emsp;&emsp;val_x, val_label = val <br>
+                    &emsp;&emsp;&emsp;&emsp;&emsp;val_output = net(val_x) <br>
+                    &emsp;&emsp;&emsp;&emsp;&emsp;v_loss = criterion(val_output, val_label) <br>
+                    &emsp;&emsp;&emsp;&emsp;&emsp;val_loss += v_loss  <br><br>
+                    &emsp;&emsp;&emsp;print(&quot;epoch: {}/{} | step: {}/{} | trn loss: {:.4f} | val loss: {:.4f}&quot;.format(  epoch+1, num_epochs, i+1, num_batches, trn_loss / 100, val_loss / len(val_loader)  ))  <br>
+                    &emsp;&emsp;&emsp;trn_loss_list.append(trn_loss/100) <br>
+                    &emsp;&emsp;&emsp;val_loss_list.append(val_loss/len(val_loader)) <br>
+                    &emsp;&emsp;&emsp;trn_loss = 0.0</p>
             </div>
             <div class='tensorflowArea' id='resulttensorflowArea' style='display:none'>
                 with graph.as_default(): <br>

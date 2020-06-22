@@ -1,3 +1,10 @@
+// 2014-17082 박충현
+// 2015-15356 이준희
+
+
+
+
+
 /***************** MNIST DATA ********************/
 
 /**
@@ -152,7 +159,7 @@ class MnistData {
 /*********** VISUALIZATION ************/
 let exampleTexts = ['Example', 'my Model']
 let modelLayers = [];
-let layerNames = ['Conv', 'Acti','Pool', 'Linear'];
+let layerNames = ['Conv', 'Acti','Pool', 'Dense'];
 const activationLayers = ['ReLU', 'Tanh', 'Sigmoid'];
 let usedActivationLayers = [];
 const filterSizes = [3, 5];
@@ -255,6 +262,7 @@ const playClick = async function () {
         d3.select('.modelSpace').selectAll('select').property('disabled', true)
         d3.select('.betweenSpaces').selectAll('select').property('disabled', true)
         d3.select('.codeSpace').selectAll('select').property('disabled', true)
+        alert("모델을 변경하려면 먼저 학습을 중단하세요.");
         stopLearning = false;
         pauseLearning = false;
         // old_history = history;
@@ -281,7 +289,7 @@ const playClick = async function () {
         stopLearning = true;
         pauseLearning = false;
         epochCurr = 0;
-        d3.select('#epochCurr').text(epochCurr)
+        d3.select('#epochCurr').text(0)
         // old_history = JSON.parse(JSON.stringify(history));
     }
 }
@@ -986,7 +994,6 @@ const makeLayer = function (layerDiv, prevSibling, value) {
             outputSize = Math.round((Number(layerDiv.property('id')) + 2 * p - f) / s) + 1
             outputTextField.text(outputSize)
 
-            // const currMode = d3.select('#Example').node().innerText;
             if(isMyModel){  // only change when example is used
                 const layerCode = d3.select('#modelCodeArea').select('.currLib')
                 let index;
@@ -1062,7 +1069,7 @@ const makeLayer = function (layerDiv, prevSibling, value) {
         const layerShow = layerDiv.append('img')
             .attr('width', 90)
             .attr('height', 90)
-            .attr('src', '/images/linear.png')
+            .attr('src', '/images/dense.png')
 
         const labelInput = layerDiv.append('label')
             .text('Input: ' + Number(layerDiv.property('id')))
@@ -2502,10 +2509,6 @@ async function run() {
     // newParent.appendChild(oldParent);
     await train(model, data);
 }  
-// const metrics = ['acc'];
-// const container = {
-//     name: 'Train Result'
-// };
 const EPOCH = 20;
 let history = [];
 // let old_history = [];
@@ -2632,14 +2635,16 @@ function getModel() {
                     tfvis.show.history(container, history, metrics);
                     if(stopLearning){
                         this.stopTraining = true;
+                    } else{
+                        d3.select('#epochCurr')
+                            .transition()
+                            .duration(Duration)
+                            .text(++epochCurr)
+
                     }
                     while(pauseLearning){
                         await sleep(100);
                     }
-                    d3.select('#epochCurr')
-                        .transition()
-                        .duration(Duration)
-                        .text(epochCurr++)
                     if(epochCurr === EPOCH){
                         d3.select('#play').html('<i class="fas fa-play-circle fa-3x"></i>')
                         d3.select('.modelSpace').selectAll('button').property('disabled', false)
